@@ -477,7 +477,9 @@ dev.off()
 
 # removing one of the observations (subMac[2]) out of the analysis; "00:0f:a3:39:dd:cd". H
 # offlineSummaryTest = subset(offlineSummary, mac != subMacs[2])
-macRemoved = 2
+Angles = 3
+macRemoved = 0
+DisWeighted = TRUE
 if (macRemoved == 0){
   offlineSummaryMacRemoved = offlineSummary
   AP = matrix( c( 7.5, 6.3, 7.5, 6.3, 2.5, -.8, 12.8, -2.8,  
@@ -510,7 +512,7 @@ offlineSummaryMacRemoved$dist = sqrt(diffs[ , 1]^2 + diffs[ , 2]^2)
 #-------------FIG 1.11 Scatter Plot Matrix signal strength vs distance
 # for each angle (8) and access point (6) = 48. 
 # Printed landscape for clarity
-pdf(file=paste("Fig 1.11 Geo_ScatterSignalDist_MacRemoved_",macRemoved,".pdf"), width = 7, height = 10)
+pdf(file=paste("Fig 1.11 Geo_ScatterSignalDist_MacRemoved_",macRemoved,'_weighted_',DisWeighted,'_SigAngles_',Angles,'.pdf'), width = 7, height = 10)
 oldPar = par(mar = c(3.1, 3.1, 1, 1))
 library(lattice)
 xyplot(signal ~ dist | factor(mac) + factor(angle), 
@@ -643,9 +645,9 @@ selectTrain = function(angleNewObs, signals = NULL, m = 1){
         # Testing function with an observed angle of 130°; including
         # 3 (flanking) observation angles. Signal strengths are averaged
         # for the included angle observations. 
-          #train130 = selectTrain(130, offlineSummaryMacRemoved, m = 3)
-          #dim(train130) #166 x 9
-          #head(train130)
+#          train130 = selectTrain(130, offlineSummaryMacRemoved, m = 3)
+#          dim(train130) #166 x 9
+#          head(train130)
 
 #------------------ Nearest Neighbor Function --
 # Finding the nearest neighbor for newly observed signal,
@@ -657,8 +659,13 @@ findNN = function(newSignal, trainSubset) {
   diffs = apply(trainSubset[ , 4:(3+nrow(AP))], 1, 
                 function(x) x - newSignal)
   dists = apply(diffs, 2, function(x) sqrt(sum(x^2)) )
-  closest = order(dists)
-  return(trainSubset[closest, 1:3 ])
+  closest = cbind(trainSubset[,1:3],dists)
+  closest = closest[order(closest$dists),]
+#  print('findNN returns')
+#  print(colnames(closest))
+#  print(closest)
+  
+  return(closest)
 }
 #----------
 
@@ -680,10 +687,41 @@ predXY = function(newSignals, newAngles, trainData,
   # Note: Using average distance for location estimation
   # Could use distances that are weighted by the inversely proportional
   # to the distance pg 35.
-  estXY = lapply(closeXY, 
+  if (weighted == TRUE) {
+
+    #print('Weighted Section:')
+    #print(k)
+    #print(closeXY[[2]])
+    #print(closeXY[[2]][1,4])
+    #print(length(closeXY))
+    ## Working on code
+    estX <- matrix(ncol = 1,nrow = length(closeXY))
+    estY <- matrix(ncol = 1,nrow = length(closeXY))
+    for (i in 1:length(closeXY)){
+    #print(closeXY[[i]])
+    numerX=rep(0,k)
+    numerY=rep(0,k)
+    denom = 0
+    for (m in 1:k){
+    denom = denom + (1/closeXY[[i]][m,4])}
+    #print(paste('Denom',denom))
+    for (j in 1:k) {
+      numerX[j] = closeXY[[i]][j,2]*((1/closeXY[[i]][j,4])/denom)
+      numerY[j] = closeXY[[i]][j,3]*((1/closeXY[[i]][j,4])/denom)
+      #print(paste(closeXY[[i]][j,2],closeXY[[i]][j,3],'numerX[j]  and numerY[j]',numerX[j],numerX[j],j))
+    }
+    estX[i,1] = sum(numerX)
+    estY[i,1] = sum(numerY)
+    #print(paste('estX and Y',estX,estY))
+    }
+   estXY = cbind(estX,estY)
+
+  } else {
+      estXY = lapply(closeXY, 
                  function(x) sapply(x[ , 2:3], 
-                                    function(x) mean(x[1:k])))
-  estXY = do.call("rbind", estXY)
+                                  function(x) mean(x[1:k])))
+      estXY = do.call("rbind", estXY)
+  }
   return(estXY)
 }
 #-----
@@ -694,17 +732,21 @@ predXY = function(newSignals, newAngles, trainData,
         # and non-weighted distance, using 3 nearest neighbors
         estXYk3 = predXY(newSignals = onlineSummary[ , 6:ncol(onlineSummary)], 
                          newAngles = onlineSummary[ , 4], 
-                         offlineSummaryMacRemoved, numAngles = 3, k = 3)
+                         offlineSummaryMacRemoved, numAngles = 3, k = 3,weighted = DisWeighted)
+        
+        estXYk3WT = predXY(newSignals = onlineSummary[ , 6:ncol(onlineSummary)], 
+                 newAngles = onlineSummary[ , 4], 
+                 offlineSummaryMacRemoved, numAngles = 3, k = 3,weighted = TRUE)
         
         # Same code as above with the exception of
         # using 1 nearest neighbors
         estXYk1 = predXY(newSignals = onlineSummary[ , 6:ncol(onlineSummary)], 
                          newAngles = onlineSummary[ , 4], 
-                         offlineSummaryMacRemoved, numAngles = 3, k = 1)
+                         offlineSummaryMacRemoved, numAngles = 3, k = 1,weighted = DisWeighted)
         
         estXYk5 = predXY(newSignals = onlineSummary[ , 6:ncol(onlineSummary)], 
                          newAngles = onlineSummary[ , 4], 
-                         offlineSummaryMacRemoved, numAngles = 3, k = 5)
+                         offlineSummaryMacRemoved, numAngles = 3, k = 5,weighted = DisWeighted)
 
 
 #------------------ Floor Map Function --
@@ -741,7 +783,7 @@ trainPoints = offlineSummaryMacRemoved[ offlineSummaryMacRemoved$angle == 0 &
         
 #-------------FIG 1.12A Geo Floor Map (actual vs predicted locations)
 # Using KNN = 3, Number of traning dataset angles = 3 
-pdf(file=paste("Fig 1.12A GEO_FloorPlan_K3_Errors_MacRemoved_",macRemoved,".pdf"), width = 10, height = 7)
+pdf(file=paste("Fig 1.12A GEO_FloorPlan_K3_Errors_MacRemoved_",macRemoved,'_weighted_',DisWeighted,'_SigAngles_',Angles,".pdf"), width = 10, height = 7)
 oldPar = par(mar = c(1, 1, 1, 1))
       floorErrorMap(estXYk3, onlineSummary[ , c("posX","posY")], 
                     trainPoints = trainPoints, AP = AP)
@@ -750,7 +792,7 @@ dev.off()
         
 #-------------FIG 1.12B Geo Floor Map (actual vs predicted locations)
 # Using KNN = 1, Number of traning dataset angles = 3 
-pdf(file=paste("Fig 1.12B GEO_FloorPlan_K1_Errors_MacRemoved_",macRemoved,".pdf"), width = 10, height = 7)
+pdf(file=paste("Fig 1.12B GEO_FloorPlan_K1_Errors_MacRemoved_",macRemoved,'_weighted_',DisWeighted,'_SigAngles_',Angles,".pdf"), width = 10, height = 7)
 oldPar = par(mar = c(1, 1, 1, 1))
 floorErrorMap(estXYk1, onlineSummary[ , c("posX","posY")], 
               trainPoints = trainPoints, AP = AP)
@@ -759,7 +801,7 @@ dev.off()
 
 #-------------FIG 1.12C Geo Floor Map (actual vs predicted locations)
 # Using KNN = 5, Number of traning dataset angles = 3 
-pdf(file=paste("Fig 1.12C GEO_FloorPlan_K5_Errors_MacRemoved_",macRemoved,".pdf"), width = 10, height = 7)
+pdf(file=paste("Fig 1.12C GEO_FloorPlan_K5_Errors_MacRemoved_",macRemoved,'_weighted_',DisWeighted,'_SigAngles_',Angles,".pdf"), width = 10, height = 7)
 oldPar = par(mar = c(1, 1, 1, 1))
 floorErrorMap(estXYk1, onlineSummary[ , c("posX","posY")], 
               trainPoints = trainPoints, AP = AP)
@@ -834,7 +876,7 @@ onlineCVSummary = reshapeSS(offlineMacRemoved, keepVars = keepVars,
           # cross validation folds of datasets
           estFold = predXY(newSignals = onlineFold[ , 6:ncol(onlineFold)], 
                            newAngles = onlineFold[ , 4], 
-                           offlineFold, numAngles = 3, k = 3)
+                           offlineFold, numAngles = 3, k = 3,weighted = DisWeighted)
           
           # Calculating SS Error for the folded subset (permuteLocs[ , 1])
           # of the dataset
@@ -862,14 +904,14 @@ for (j in 1:v) {
   for (k in 1:K) {
     estFold = predXY(newSignals = onlineFold[ , 6:ncol(onlineFold)],
                      newAngles = onlineFold[ , 4], 
-                     offlineFold, numAngles = 3, k = k)
+                     offlineFold, numAngles = Angles, k = k,weighted = DisWeighted)
     err[k] = err[k] + calcError(estFold, actualFold)
   }
 }
           
 #-------------FIG 1.13 RMSE vs K neighbors-Line graph
 # Number of traning dataset angles = 3 
-pdf(file = paste("Fig 1.13 Geo_CVChoiceOfK_MacRemoved_",macRemoved,".pdf"), width = 10, height = 6)
+pdf(file = paste("Fig 1.13 Geo_CVChoiceOfK_MacRemoved_",macRemoved,'_weighted_',DisWeighted,'_SigAngles_',Angles,".pdf"), width = 10, height = 6)
 oldPar = par(mar = c(4, 3, 1, 1))
 plot(y = err, x = (1:K),  type = "l", lwd= 2,
      ylim = c((ymin=900), 2100),
@@ -895,10 +937,11 @@ val <- match(min(err),err)
 # Optimal KNN might vary if seed value changes
 estXYkBest = predXY(newSignals = onlineSummary[ , 6:ncol(onlineSummary)], 
                  newAngles = onlineSummary[ , 4], 
-                 offlineSummaryMacRemoved, numAngles = 3, k = val)
+                 offlineSummaryMacRemoved, numAngles = Angles, k = val,weighted = DisWeighted)
 
 #calcError(estXYkBest, actualXY)# Error - 276 (may vary depending on K)
 paste("Minimum Calc Error: ",calcError(estXYkBest, actualXY))
 paste("K value: ",val)
 paste('MacID Removed: ',subMacs[as.integer(macRemoved)])
-paste('Weighted: ','NA')
+paste('Weighted: ',DisWeighted)
+paste('Signal Angles: ',Angles)
