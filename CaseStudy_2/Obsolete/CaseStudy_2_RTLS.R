@@ -140,7 +140,7 @@ lines = txt[ substr(txt, 1, 1) != "#" ] # 146080 strings
         #?ecdf()
         plot(ecdf(offline$orientation))
         # Creating PDF of ECDF graph
-        pdf(file = "Fig 1.2-Test Geo_ECDFOrientation.pdf", width = 10, height = 7)
+        pdf(file = "Fig 1.2 Geo_ECDFOrientation.pdf", width = 10, height = 7)
         oldPar = par(mar = c(4, 4, 1, 1))
         plot(ecdf(offline$orientation), pch = 19, cex = 0.3,
              xlim = c(-5, 365), axes = FALSE,
@@ -153,7 +153,7 @@ lines = txt[ substr(txt, 1, 1) != "#" ] # 146080 strings
         
         #------------- Plotting Geo Density Orientation
         # Creating PDF of Geo Density graph
-        pdf(file = "Fig 1.2b-Test Geo_DensityOrientation.pdf", width = 10, height = 5)
+        pdf(file = "Fig 1.2b Geo_DensityOrientation.pdf", width = 10, height = 5)
         oldPar = par(mar = c(4, 4, 1, 1))
         plot(density(offline$orientation, bw = 2), 
              xlab = "orientation", main = "")
@@ -172,7 +172,7 @@ lines = txt[ substr(txt, 1, 1) != "#" ] # 146080 strings
         
         #------------- FIG. 1.3  Plotting BoxPlots Rounded Orientation Angle
         # Creating PDF of BoxPlot Angle graph
-        pdf(file = "Fig 1.3-Test Geo_BoxplotAngle.pdf", width = 10)
+        pdf(file = "Fig 1.3 Geo_BoxplotAngle.pdf", width = 10)
         oldPar = par(mar = c(4, 4, 1, 1))
         boxplot(offline$orientation ~ offline$angle,
                 xlab = 'nearest 45 degree angle',
@@ -245,7 +245,7 @@ lines = txt[ substr(txt, 1, 1) != "#" ] # 146080 strings
         # 
         # Creating PDF of Dot plot displaying the number of observations
         # at each x,y  location
-        pdf(file = "Fig 1.5-Test Geo_XYByCount.pdf", width = 10)
+        pdf(file = "Fig 1.5 Geo_XYByCount.pdf", width = 10)
         oldPar = par(mar = c(3.1, 3.1, 1, 1))
         # locCounts matrix transposed
         locCounts = t(locCounts)
@@ -257,7 +257,7 @@ lines = txt[ substr(txt, 1, 1) != "#" ] # 146080 strings
         
         #-------------FIG 1.6 Creating a grid of boxplots of signal strength by 
         # orientation/angle, subdivided by macID
-        pdf(file = "Fig 1.6-Test Geo_BoxplotSignalByMacAngle.pdf", width = 7)
+        pdf(file = "Fig 1.6 Geo_BoxplotSignalByMacAngle.pdf", width = 7)
         oldPar = par(mar = c(3.1, 3, 1, 1))
         
         bwplot(signal ~ factor(angle) | mac, data = offline, 
@@ -277,7 +277,7 @@ lines = txt[ substr(txt, 1, 1) != "#" ] # 146080 strings
         
         #-------------FIG 1.7 Creating signal strength density curves matrix
         # for each macID and orientation
-        pdf(file = "Fig 1.7-Test Geo_DensitySignalByMacAngle.pdf", width = 8, height = 12)
+        pdf(file = "Fig 1.7 Geo_DensitySignalByMacAngle.pdf", width = 8, height = 12)
         oldPar = par(mar = c(3.1, 3, 1, 1))
         
         densityplot( ~ signal | mac + factor(angle), data = offline,
@@ -299,10 +299,7 @@ lines = txt[ substr(txt, 1, 1) != "#" ] # 146080 strings
 # Puts it in a convieneient function
 
 readData = 
-  function(filename = 'Data/offline.final.trace.txt', 
-           subMacs = c("00:0f:a3:39:e1:c0", "00:0f:a3:39:dd:cd", "00:14:bf:b1:97:8a",
-                       "00:14:bf:3b:c7:c6", "00:14:bf:b1:97:90", "00:14:bf:b1:97:8d",
-                       "00:14:bf:b1:97:81"))
+  function(filename = 'Data/offline.final.trace.txt', subMacs)
   {
     # Loading Data Set text file
     txt = readLines(filename)
@@ -362,11 +359,14 @@ readData =
 
         
 #Read original dataset, using readData function
-offline = readData()
+subMacs = c("00:0f:a3:39:e1:c0", "00:0f:a3:39:dd:cd", "00:14:bf:b1:97:8a",
+            "00:14:bf:3b:c7:c6", "00:14:bf:b1:97:90", "00:14:bf:b1:97:8d",
+            "00:14:bf:b1:97:81")
+offline = readData(subMacs=subMacs)
 
         # Test to see if the original 'stepwise' data parsing
         # and function data parsing dataset are identical
-        identical(offline, offlineExplore) # TRUE
+#        identical(offline, offlineExplore) # TRUE
 
         
 # Creation of new variable posXY which combines both x and y IDs
@@ -400,7 +400,7 @@ offlineSummary = do.call("rbind", signalSummary)    # 9296 x 14
         
 #-------------FIG 1.8 Creating boxplots of standard deviation of
 # signal strength for a given range of average signal strengths
-pdf(file = "Fig 1.8-Test Geo_BoxplotSignalSDByAvg.pdf", width = 10)
+pdf(file = "Fig 1.8 Geo_BoxplotSignalSDByAvg.pdf", width = 10)
 oldPar = par(mar = c(3.1, 3, 1, 1))
         
     breaks = seq(-90, -30, by = 5)
@@ -416,7 +416,7 @@ dev.off()
 # looking at mean-median vs # of observations
 # No apparent evidence of skewing since mean and median differ by less than
 # 1 - 2 dBm. Green trend line confirms this
-pdf(file = "Fig 1.9-Test Geo_ScatterMean-Median.pdf", width = 10)
+pdf(file = "Fig 1.9 Geo_ScatterMean-Median.pdf", width = 10)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
 
     with(offlineSummary,
@@ -451,7 +451,7 @@ surfaceSS = function(data, mac, angle = 45) {
 #--------------------
 
 #-------------FIG 1.10 Signal Strength Heat Map for various Access Points and Angles
-pdf(file="Fig 1.10-Test MedSignal_2AccessPts_2Angles.pdf", width = 9, height = 6)
+pdf(file="Fig 1.10 MedSignal_2AccessPts_2Angles.pdf", width = 9, height = 6)
 parCur = par(mfrow = c(2,2), mar = rep(1, 4)) # 2 x 2 plot
     # arbitrarily choosing macID's "00:14:bf:b1:97:90" & "00:0f:a3:39:e1:c0"
     # Angles: 0 & 135
@@ -477,16 +477,26 @@ dev.off()
 
 # removing one of the observations (subMac[2]) out of the analysis; "00:0f:a3:39:dd:cd". H
 # offlineSummaryTest = subset(offlineSummary, mac != subMacs[2])
-macRemoved = 1
-offlineSummaryMacRemoved = subset(offlineSummary, mac != subMacs[as.integer(macRemoved)])
-#identical(offlineSummaryTest, offlineSummaryMacRemoved)  
-
-# Create a matrix with the relative locations of th 6 access points
-# using the heat maps to determine which MacID goes with a given location.
-AP = matrix( c( 7.5, 6.3, 2.5, -.8, 12.8, -2.8,  
-                1, 14, 33.5, 9.3,  33.5, 2.8),
-             ncol = 2, byrow = TRUE,
-             dimnames = list(subMacs[ -(as.integer(macRemoved)) ], c("x", "y") ))
+Angles = 3
+macRemoved = 0
+DisWeighted = TRUE
+if (macRemoved == 0){
+  offlineSummaryMacRemoved = offlineSummary
+  AP = matrix( c( 7.5, 6.3, 7.5, 6.3, 2.5, -.8, 12.8, -2.8,  
+                  1, 14, 33.5, 9.3,  33.5, 2.8),
+  ncol = 2, byrow = TRUE,
+  dimnames = list(subMacs, c("x", "y") ))
+  
+} else {
+   offlineSummaryMacRemoved = subset(offlineSummary, mac != subMacs[as.integer(macRemoved)])
+   #identical(offlineSummaryTest, offlineSummaryMacRemoved)  
+      
+   # Create a matrix with the relative locations of th 6 access points
+   # using the heat maps to determine which MacID goes with a given location.
+   AP = matrix( c( 7.5, 6.3, 2.5, -.8, 12.8, -2.8,  
+                   1, 14, 33.5, 9.3,  33.5, 2.8),
+   ncol = 2, byrow = TRUE,
+   dimnames = list(subMacs[ -(as.integer(macRemoved)) ], c("x", "y") ))}
 # Dispaly of Access Pt location and ID
 AP
 
@@ -502,7 +512,7 @@ offlineSummaryMacRemoved$dist = sqrt(diffs[ , 1]^2 + diffs[ , 2]^2)
 #-------------FIG 1.11 Scatter Plot Matrix signal strength vs distance
 # for each angle (8) and access point (6) = 48. 
 # Printed landscape for clarity
-pdf(file=paste("Fig 1.11 Geo_ScatterSignalDist_MacRemoved_",macRemoved,".pdf"), width = 7, height = 10)
+pdf(file=paste("Fig 1.11 Geo_ScatterSignalDist_MacRemoved_",macRemoved,'_weighted_',DisWeighted,'_SigAngles_',Angles,'.pdf'), width = 7, height = 10)
 oldPar = par(mar = c(3.1, 3.1, 1, 1))
 library(lattice)
 xyplot(signal ~ dist | factor(mac) + factor(angle), 
@@ -533,7 +543,7 @@ length(unique(online$posXY)) # 60 unique test positions [Note: 60 posX; 53 posY]
 
 # Create a table with # of online readings at each unique location and angle 
 tabonlineXYA = table(online$posXY, online$angle)
-tabonlineXYA[1:6, ]
+tabonlineXYA[1:7, ]
 
 # Rearranging the dataset: 
 # Creating dataset with single entry for each unique position and orientatoin
@@ -547,7 +557,7 @@ byLoc = with(online,
                 function(x) {
                   ans = x[1, keepVars]
                   avgSS = tapply(x$signal, x$mac, mean)
-                  y = matrix(avgSS, nrow = 1, ncol = 6,
+                  y = matrix(avgSS, nrow = 1, ncol = (nrow(AP)),
                              dimnames = list(ans$posXY, names(avgSS)))
                   cbind(ans, y)
                 }))
@@ -591,7 +601,7 @@ reshapeSS = function(data, varSignal = "signal",
                       x = x[x$angle == sample(refs, size = 1), ]}
                     ans = x[1, keepVars]
                     avgSS = tapply(x[ , varSignal ], x$mac, mean)
-                    y = matrix(avgSS, nrow = 1, ncol = 6,
+                    y = matrix(avgSS, nrow = 1, ncol = (nrow(AP)),
                                dimnames = list(ans$posXY,
                                                names(avgSS)))
                     cbind(ans, y)
@@ -635,9 +645,9 @@ selectTrain = function(angleNewObs, signals = NULL, m = 1){
         # Testing function with an observed angle of 130°; including
         # 3 (flanking) observation angles. Signal strengths are averaged
         # for the included angle observations. 
-          #train130 = selectTrain(130, offlineSummaryMacRemoved, m = 3)
-          #dim(train130) #166 x 9
-          #head(train130)
+#          train130 = selectTrain(130, offlineSummaryMacRemoved, m = 3)
+#          dim(train130) #166 x 9
+#          head(train130)
 
 #------------------ Nearest Neighbor Function --
 # Finding the nearest neighbor for newly observed signal,
@@ -646,11 +656,16 @@ selectTrain = function(angleNewObs, signals = NULL, m = 1){
 # the training observations in order of closeness to newly observed signal
 
 findNN = function(newSignal, trainSubset) {
-  diffs = apply(trainSubset[ , 4:9], 1, 
+  diffs = apply(trainSubset[ , 4:(3+nrow(AP))], 1, 
                 function(x) x - newSignal)
   dists = apply(diffs, 2, function(x) sqrt(sum(x^2)) )
-  closest = order(dists)
-  return(trainSubset[closest, 1:3 ])
+  closest = cbind(trainSubset[,1:3],dists)
+  closest = closest[order(closest$dists),]
+#  print('findNN returns')
+#  print(colnames(closest))
+#  print(closest)
+  
+  return(closest)
 }
 #----------
 
@@ -672,10 +687,41 @@ predXY = function(newSignals, newAngles, trainData,
   # Note: Using average distance for location estimation
   # Could use distances that are weighted by the inversely proportional
   # to the distance pg 35.
-  estXY = lapply(closeXY, 
+  if (weighted == TRUE) {
+
+    #print('Weighted Section:')
+    #print(k)
+    #print(closeXY[[2]])
+    #print(closeXY[[2]][1,4])
+    #print(length(closeXY))
+    ## Working on code
+    estX <- matrix(ncol = 1,nrow = length(closeXY))
+    estY <- matrix(ncol = 1,nrow = length(closeXY))
+    for (i in 1:length(closeXY)){
+    #print(closeXY[[i]])
+    numerX=rep(0,k)
+    numerY=rep(0,k)
+    denom = 0
+    for (m in 1:k){
+    denom = denom + (1/closeXY[[i]][m,4])}
+    #print(paste('Denom',denom))
+    for (j in 1:k) {
+      numerX[j] = closeXY[[i]][j,2]*((1/closeXY[[i]][j,4])/denom)
+      numerY[j] = closeXY[[i]][j,3]*((1/closeXY[[i]][j,4])/denom)
+      #print(paste(closeXY[[i]][j,2],closeXY[[i]][j,3],'numerX[j]  and numerY[j]',numerX[j],numerX[j],j))
+    }
+    estX[i,1] = sum(numerX)
+    estY[i,1] = sum(numerY)
+    #print(paste('estX and Y',estX,estY))
+    }
+   estXY = cbind(estX,estY)
+
+  } else {
+      estXY = lapply(closeXY, 
                  function(x) sapply(x[ , 2:3], 
-                                    function(x) mean(x[1:k])))
-  estXY = do.call("rbind", estXY)
+                                  function(x) mean(x[1:k])))
+      estXY = do.call("rbind", estXY)
+  }
   return(estXY)
 }
 #-----
@@ -684,19 +730,23 @@ predXY = function(newSignals, newAngles, trainData,
         # location of online dataset (onlineSummary)
         # Using 3 angles nearest and flanking above and below
         # and non-weighted distance, using 3 nearest neighbors
-        estXYk3 = predXY(newSignals = onlineSummary[ , 6:11], 
+        estXYk3 = predXY(newSignals = onlineSummary[ , 6:ncol(onlineSummary)], 
                          newAngles = onlineSummary[ , 4], 
-                         offlineSummaryMacRemoved, numAngles = 3, k = 3)
+                         offlineSummaryMacRemoved, numAngles = 3, k = 3,weighted = DisWeighted)
+        
+        estXYk3WT = predXY(newSignals = onlineSummary[ , 6:ncol(onlineSummary)], 
+                 newAngles = onlineSummary[ , 4], 
+                 offlineSummaryMacRemoved, numAngles = 3, k = 3,weighted = TRUE)
         
         # Same code as above with the exception of
         # using 1 nearest neighbors
-        estXYk1 = predXY(newSignals = onlineSummary[ , 6:11], 
+        estXYk1 = predXY(newSignals = onlineSummary[ , 6:ncol(onlineSummary)], 
                          newAngles = onlineSummary[ , 4], 
-                         offlineSummaryMacRemoved, numAngles = 3, k = 1)
+                         offlineSummaryMacRemoved, numAngles = 3, k = 1,weighted = DisWeighted)
         
-        estXYk5 = predXY(newSignals = onlineSummary[ , 6:11], 
+        estXYk5 = predXY(newSignals = onlineSummary[ , 6:ncol(onlineSummary)], 
                          newAngles = onlineSummary[ , 4], 
-                         offlineSummaryMacRemoved, numAngles = 3, k = 5)
+                         offlineSummaryMacRemoved, numAngles = 3, k = 5,weighted = DisWeighted)
 
 
 #------------------ Floor Map Function --
@@ -733,7 +783,7 @@ trainPoints = offlineSummaryMacRemoved[ offlineSummaryMacRemoved$angle == 0 &
         
 #-------------FIG 1.12A Geo Floor Map (actual vs predicted locations)
 # Using KNN = 3, Number of traning dataset angles = 3 
-pdf(file=paste("Fig 1.12A GEO_FloorPlan_K3_Errors_MacRemoved_",macRemoved,".pdf"), width = 10, height = 7)
+pdf(file=paste("Fig 1.12A GEO_FloorPlan_K3_Errors_MacRemoved_",macRemoved,'_weighted_',DisWeighted,'_SigAngles_',Angles,".pdf"), width = 10, height = 7)
 oldPar = par(mar = c(1, 1, 1, 1))
       floorErrorMap(estXYk3, onlineSummary[ , c("posX","posY")], 
                     trainPoints = trainPoints, AP = AP)
@@ -742,7 +792,7 @@ dev.off()
         
 #-------------FIG 1.12B Geo Floor Map (actual vs predicted locations)
 # Using KNN = 1, Number of traning dataset angles = 3 
-pdf(file=paste("Fig 1.12B GEO_FloorPlan_K1_Errors_MacRemoved_",macRemoved,".pdf"), width = 10, height = 7)
+pdf(file=paste("Fig 1.12B GEO_FloorPlan_K1_Errors_MacRemoved_",macRemoved,'_weighted_',DisWeighted,'_SigAngles_',Angles,".pdf"), width = 10, height = 7)
 oldPar = par(mar = c(1, 1, 1, 1))
 floorErrorMap(estXYk1, onlineSummary[ , c("posX","posY")], 
               trainPoints = trainPoints, AP = AP)
@@ -751,7 +801,7 @@ dev.off()
 
 #-------------FIG 1.12C Geo Floor Map (actual vs predicted locations)
 # Using KNN = 5, Number of traning dataset angles = 3 
-pdf(file=paste("Fig 1.12C GEO_FloorPlan_K5_Errors_MacRemoved_",macRemoved,".pdf"), width = 10, height = 7)
+pdf(file=paste("Fig 1.12C GEO_FloorPlan_K5_Errors_MacRemoved_",macRemoved,'_weighted_',DisWeighted,'_SigAngles_',Angles,".pdf"), width = 10, height = 7)
 oldPar = par(mar = c(1, 1, 1, 1))
 floorErrorMap(estXYk1, onlineSummary[ , c("posX","posY")], 
               trainPoints = trainPoints, AP = AP)
@@ -796,8 +846,14 @@ set.seed(123) # setting seed value, so that results are the same
 
 #list(unique(offline$mac))
 # Confirming that subMac[2] "00:0f:a3:39:dd:cd" is removed from offline dataset
-offlineMacRemoved = offline[ offline$mac != subMacs[as.integer(macRemoved)], ] #reduced to 769332 obs
+#offlineMacRemoved = offline[ offline$mac != subMacs[as.integer(macRemoved)], ] #reduced to 769332 obs
           
+if (macRemoved == 0){
+  offlineMacRemoved = offline
+} else {
+  offlineMacRemoved = offline[ offline$mac != subMacs[as.integer(macRemoved)], ]}
+
+
 keepVars = c("posXY", "posX","posY", "orientation", "angle")
           
 # Create a new dataframe using random sample angles for observations,
@@ -818,9 +874,9 @@ onlineCVSummary = reshapeSS(offlineMacRemoved, keepVars = keepVars,
           
           # Using predXY function to predict xy locations, using
           # cross validation folds of datasets
-          estFold = predXY(newSignals = onlineFold[ , 6:11], 
+          estFold = predXY(newSignals = onlineFold[ , 6:ncol(onlineFold)], 
                            newAngles = onlineFold[ , 4], 
-                           offlineFold, numAngles = 3, k = 3)
+                           offlineFold, numAngles = 3, k = 3,weighted = DisWeighted)
           
           # Calculating SS Error for the folded subset (permuteLocs[ , 1])
           # of the dataset
@@ -830,6 +886,7 @@ onlineCVSummary = reshapeSS(offlineMacRemoved, keepVars = keepVars,
 v = 11 #repeated from earlier, for clarity: # of Folds        
 K = 20 # Number of nearest neighbors
 err = rep(0, K)
+
           
 # loop through all the cross validation folds, using K values from
 # 1 to 20, to find and calculate the SS Errors for each
@@ -845,16 +902,16 @@ for (j in 1:v) {
   actualFold = onlineFold[ , c("posX", "posY")]
             
   for (k in 1:K) {
-    estFold = predXY(newSignals = onlineFold[ , 6:11],
+    estFold = predXY(newSignals = onlineFold[ , 6:ncol(onlineFold)],
                      newAngles = onlineFold[ , 4], 
-                     offlineFold, numAngles = 3, k = k)
+                     offlineFold, numAngles = Angles, k = k,weighted = DisWeighted)
     err[k] = err[k] + calcError(estFold, actualFold)
   }
 }
           
 #-------------FIG 1.13 RMSE vs K neighbors-Line graph
 # Number of traning dataset angles = 3 
-pdf(file = paste("Fig 1.13-Test Geo_CVChoiceOfK_MacRemoved_",macRemoved,".pdf"), width = 10, height = 6)
+pdf(file = paste("Fig 1.13 Geo_CVChoiceOfK_MacRemoved_",macRemoved,'_weighted_',DisWeighted,'_SigAngles_',Angles,".pdf"), width = 10, height = 6)
 oldPar = par(mar = c(4, 3, 1, 1))
 plot(y = err, x = (1:K),  type = "l", lwd= 2,
      ylim = c((ymin=900), 2100),
@@ -876,12 +933,15 @@ dev.off()
 
 #-------
 val <- match(min(err),err)        
-# Finding RMSE for optimal values of KNN (k=5)
+# Finding RMSE for optimal values of KNN k='val'
 # Optimal KNN might vary if seed value changes
-estXYkBest = predXY(newSignals = onlineSummary[ , 6:11], 
+estXYkBest = predXY(newSignals = onlineSummary[ , 6:ncol(onlineSummary)], 
                  newAngles = onlineSummary[ , 4], 
-                 offlineSummaryMacRemoved, numAngles = 3, k = val)
+                 offlineSummaryMacRemoved, numAngles = Angles, k = val,weighted = DisWeighted)
 
 #calcError(estXYkBest, actualXY)# Error - 276 (may vary depending on K)
 paste("Minimum Calc Error: ",calcError(estXYkBest, actualXY))
 paste("K value: ",val)
+paste('MacID Removed: ',subMacs[as.integer(macRemoved)])
+paste('Weighted: ',DisWeighted)
+paste('Signal Angles: ',Angles)
