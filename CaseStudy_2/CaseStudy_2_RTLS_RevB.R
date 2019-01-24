@@ -506,7 +506,7 @@ dev.off()
 
 signalAngles = c(1,2,3,4)
 SubMacRemoved = c(0,1,2)
-weighted = c(TRUE,FALSE)
+weighted = c(FALSE,TRUE)
 
 #--------------------------------------------
 #--------------------------------------------
@@ -1045,9 +1045,9 @@ paste('Weighted: ',DisWeighted)
 paste('Signal Angles: ',Angles)
 paste("Minimum RMSE: ",rmseMin)
 
-SummaryTemp = data.frame(macid,DisWeighted,Angles,val,rmseMin,CalcErrorOPtimal)
-SummaryTemp$err = list(err)
-Summary = rbind(Summary,SummaryTemp)
+#SummaryTemp = data.frame(macid,DisWeighted,Angles,val,rmseMin,CalcErrorOPtimal)
+#SummaryTemp$err = list(err)
+#Summary = rbind(Summary,SummaryTemp)
 
 #Summary$err[[2]][2]
 } # Closing Bracket for Weighted Loop
