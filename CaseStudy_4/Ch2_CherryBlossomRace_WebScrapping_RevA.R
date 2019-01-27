@@ -276,45 +276,63 @@ womenTables = mapply(extractResTable, url = wurls,
 # -------------------- Cleaning Web Scrapped Data -------------------------
 # -------------------------------------------------------------------------
 
-# Read Table does not work properly for raw/parsed data, due to formatting issues
-m2012 = read.table(file="MenTxt/2012.txt", skip = 8)
+      #------------------ Sample Code using 2012 as an example -------------
+      # Read Table does not work properly for raw/parsed data, due to formatting issues
+      m2012 = read.table(file="MenTxt/2012.txt", skip = 8)
+      
+      # Read lines is a better option for reading the Runner's txt files
+      els = readLines("MenTxt/2012.txt")
+      
+      els[1:10] # Sanity check to see if data was properly imported 
+      
+      els2011 = readLines("MenTxt/2011.txt") # Repeat commands with 2011 data
+      els2011[1:10]
+      
+      # Location of data varies depending on the year the data was obtained
+      # One thing in common is that data begins after the line with equal signs '==='
+      # Will use grep function to search through character strings for the index where
+      # the header is located
+      eqIndex = grep("^===", els) 
+      eqIndex # Line 8 (2012 data)
+      
+          # Alternative to using grep. Use substr.  Looks for line that has '===' within
+          # the first 3 characters
+          first3 = substr(els, 1, 3)
+          which(first3 == "===")
+      
+      spacerRow = els[eqIndex] # Setting spacerRow variable equal to index of row containing '==='
+      headerRow = els[eqIndex - 1] # Setting headerROw variable equal to index of row containing '===' - 1
+      body = els[ -(1:eqIndex) ] # body variable is everything after the spacerRow 7193 Elements
+      
+      headerRow = tolower(headerRow) # converting header row to lower case, to avoid issues between
+                                    # years because format varies year to year (lower case & upper case)
+      
+      ageStart = regexpr("ag", headerRow) #Attempt to identify 'Age' category in header using regex
+      ageStart #Starts at index 49 and is 2 characters long
+      
+      # extract age variable in character strings in body variable, using AgeStart to identify location
+      age = substr(body, start = ageStart, stop = ageStart + 1) 
+      head(age)
+      summary(as.numeric(age))
+      # Summary results
+      # Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+      #    9.00   29.00   35.00   37.75   45.00   89.00       1 
+      
+      blankLocs = gregexpr(" ", spacerRow) # locating blanks in spacerRow, signifying separation of different variables
+      blankLocs #6 18 25 48 51 72 80 88 94
+      
+      searchLocs = c(0, blankLocs[[1]]) # vector of location of blanks in spacerRow
+      
+      # Separation of variable in body variable, using searchLocs to distinguish location & length
+      Values = mapply(substr, list(body), 
+                      start = searchLocs[ -length(searchLocs)] + 1, #adds 1 to every value of searchLocs: 1  7 19 26 49 52 73 81 89
+                      stop = searchLocs[ -1 ] - 1)# Subtracts 1 from every value of searchLocs except 1st one: 5 17 24 47 50 71 79 87 93
 
-# Read lines is a better option for reading the Runner's txt files
-els = readLines("MenTxt/2012.txt")
 
-els[1:10] # Sanity check to see if data was properly imported 
-
-els2011 = readLines("MenTxt/2011.txt")
-els2011[1:10]
-
-eqIndex = grep("^===", els)
-eqIndex
-
-first3 = substr(els, 1, 3)
-which(first3 == "===")
-
-spacerRow = els[eqIndex]
-headerRow = els[eqIndex - 1]
-body = els[ -(1:eqIndex) ]
-
-headerRow = tolower(headerRow)
-
-ageStart = regexpr("ag", headerRow)
-ageStart
-
-age = substr(body, start = ageStart, stop = ageStart + 1)
-head(age)
-
-summary(as.numeric(age))
-
-blankLocs = gregexpr(" ", spacerRow)
-blankLocs
-
-searchLocs = c(0, blankLocs[[1]])
-
-Values = mapply(substr, list(body), 
-                start = searchLocs[ -length(searchLocs)] + 1, 
-                stop = searchLocs[ -1 ] - 1)
+      
+#---------- findColLocs ()  Find column locations --------
+# COnverts all the previous exploratory work to identiy column location
+# and put it into a single function
 
 findColLocs = function(spacerRow) {
   
@@ -325,14 +343,21 @@ findColLocs = function(spacerRow) {
     return( c(0, spaceLocs, rowLength + 1))
   else return(c(0, spaceLocs))
 }
+#-----
 
+#---------- selectCols ()  Selection of each variable --------
+# Converts all the previous exploratory work to select variables and populating
+# values. Puts it into a single function      
 selectCols = 
   function(colNames, headerRow, searchLocs) 
   {
     sapply(colNames, 
            function(name, headerRow, searchLocs)
            {
-             startPos = regexpr(name, headerRow)[[1]]
+             startPos = regexpr(name, headerRow)[[1]] # Returns a -1 if regexpr does not match the
+                                                      # name with a value in the headerRow (matches variable
+                                                      # to header row value, if not there, does not 
+                                                      # populate variable)
              if (startPos == -1) 
                return( c(NA, NA) )
              
@@ -341,28 +366,44 @@ selectCols =
            },
            headerRow = headerRow, searchLocs = searchLocs )
   }
+#-----
+      
+      #------------------ Sample Code using 2012 as an example -------------
+      # To confirm functions work as anticipated
+      searchLocs = findColLocs(spacerRow)  #0  6 18 25 48 51 72 80 88 94
+      ageLoc = selectCols("ag", headerRow, searchLocs) 
+      ages = mapply(substr, list(body), 
+                    start = ageLoc[1,], stop = ageLoc[2, ])
+      
+      summary(as.numeric(ages)) #   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+                                #   9.00   29.00   35.00   37.75   45.00   89.00       1
+      #--------------------------------------------------------------------
 
-searchLocs = findColLocs(spacerRow)
-ageLoc = selectCols("ag", headerRow, searchLocs) 
-ages = mapply(substr, list(body), 
-              start = ageLoc[1,], stop = ageLoc[2, ])
+      #------------------ Sample Code using 2012 as an example -------------
+      shortColNames = c("name", "home", "ag", "gun", "net", "time") #short name must be enough to uniquely identify
+                                                                    # the column without over specifying it
+      
+      locCols = selectCols(shortColNames, headerRow, searchLocs) #Creates location index for all shortColNames
+                                                                # variables that exist in 2012 dataset
+                                                                #       name home ag gun net time
+                                                                # [1,]   26   52 49  NA  NA   81  (Start)
+                                                                # [2,]   47   71 50  NA  NA   87  (Stop)
+      
+      # Mapping variable values to matrix, using parsing functions
+      Values = mapply(substr, list(body), start = locCols[1, ], 
+                      stop = locCols[2, ])
+      class(Values)
+      
+      colnames(Values) = shortColNames #Adding column name to matrix variables (7193 observations)
+        head(Values)
+        tail(Values)[ , 1:3]
+        #---------------------------------------------------------------------
 
-summary(as.numeric(ages))
 
-shortColNames = c("name", "home", "ag", "gun", "net", "time")
-
-locCols = selectCols(shortColNames, headerRow, searchLocs)
-
-Values = mapply(substr, list(body), start = locCols[1, ], 
-                stop = locCols[2, ])
-
-class(Values)
-
-colnames(Values) = shortColNames
-head(Values)
-
-tail(Values)[ , 1:3]
-
+#---------- extractVariables ()  Extract variables for each observation --------
+# Parses the web scrapped data into a matrix of variables, using grep to id location
+# and variable name: 'name' 'home' 'age' 'gun' 'net', and 'time'.
+# If field does not exists, populates with NA. Puts it into a single function           
 extractVariables = 
   function(file, varNames =c("name", "home", "ag", "gun",
                              "net", "time"))
@@ -381,34 +422,45 @@ extractVariables =
     Values = mapply(substr, list(body), start = locCols[1, ], 
                     stop = locCols[2, ])
     colnames(Values) = varNames
-    
+    # returns values variable   
     invisible(Values)
   }
+#--------------
 
-mfilenames = paste("MenTxt/", 1999:2012, ".txt", sep = "")
-menFiles = lapply(mfilenames, readLines)
-names(menFiles) = 1999:2012
+#----------- Parsing of txt files for results from Cherry Blossom Race
+#----------- For years 1999 - 2012:  Using
+mfilenames = paste("MenTxt/", 1999:2012, ".txt", sep = "") #Creating Path
+menFiles = lapply(mfilenames, readLines) #Reading lines of .txt files and creating a list, storiing it in menFiles
+names(menFiles) = 1999:2012 # Naming list
 
+# Creating Matrix of men's results from web-scrapped data, using extractVariables function
 menResMat = lapply(menFiles, extractVariables)
-length(menResMat)
+length(menResMat) # 14 character vectors 1999:2012
 
+# Determine the number of observations per list item
 sapply(menResMat, nrow)
+# 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
+# 3190 3017 3622 3724 3948 4156 4327 5237 5276 5905 6651 6911 7011 7193
 
-### The 2001 results for women are missing the === and the column names.
-### Can we pick it up from the 2001 men? YES! Make an exercise
-#wfilenames = paste("WomenTxt/", 1999:2012, ".txt", sep = "")
-#womenTables = lapply(wfilenames, readLines)
+        ### The 2001 results for women are missing the === and the column names.
+        ### Can we pick it up from the 2001 men? YES! Make an exercise
+        #wfilenames = paste("WomenTxt/", 1999:2012, ".txt", sep = "")
+        #womenTables = lapply(wfilenames, readLines)
+        
+        #womenTables[[3]][1:5]
+        
+        #names(womenTables) = 1999:2012
+        #womenResMat = lapply(womenTables, extractVariables)
+        #head(womenResMat[[3]], 10)
+        #tail(womenResMat[[3]], 10)
 
-#womenTables[[3]][1:5]
+# ----------------------------------------
+# -------------- Data Cleaning 2.3 -------
 
-#names(womenTables) = 1999:2012
-#womenResMat = lapply(womenTables, extractVariables)
-#head(womenResMat[[3]], 10)
-#tail(womenResMat[[3]], 10)
+      #------------------ Sample Code using 2012 as an example; to confirm results of function----------
+      age = as.numeric(menResMat[['2012']][ , 'ag'])
 
-age = as.numeric(menResMat[['2012']][ , 'ag'])
-
-tail(age)
+      tail(age) # 41 39 56 35 NA 48
 
 age = sapply(menResMat,
              function(x) as.numeric(x[ , 'ag']))
