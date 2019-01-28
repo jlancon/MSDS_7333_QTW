@@ -6,7 +6,7 @@
 #  Case Study from: Data Science in R: Nolan,Temple,Lang (Ch 2)
 #  Initial source code: http://rdatasciencecases.org/code.html
 
-
+library(XML)
 library(rstudioapi)
 current_path <- getActiveDocumentContext()$path
 setwd(dirname(current_path ))
@@ -20,7 +20,6 @@ setwd(dirname(current_path ))
 #  
 # ------------------- Section ends on line 270 -------------------
 
-library(XML)
 # createing variable for base website url
 # to be appended to for each subsequent year
 ubase = "http://www.cherryblossom.org/"
@@ -166,7 +165,7 @@ extractResTable =
   function(url = "http://www.cherryblossom.org/results/2009/09cucb-F.htm",
            year = 1999, sex = "male", file = NULL)
   {
-    doc = htmlParse(url)
+    doc = htmlParse(url,encoding = 'utf-8') # encoding needed for Windows users for yr 2009
     
     if (year == 1999) {
       # Get preformatted text from <pre> elements
@@ -214,6 +213,7 @@ years = 1999:2012 # Added years argument to function call to identify year being
 # NOTE: Directory must exists prior to executing code. ####
 menTables = mapply(extractResTable, url = urls, year = years, file = 'MenTxt') 
 
+#menTables = mapply(extractResTable, url = urls, year = years) #for use when creating .rda files
 
 #---------------------------------------------------------------
 #--------- Code only works if file= NULL (no text files created)
@@ -345,7 +345,7 @@ findColLocs = function(spacerRow) {
 }
 #-----
 
-#---------- selectCols ()  Selection of each variable --------
+#---------- selectCols ()  Rev A Selection of each variable --------
 # Converts all the previous exploratory work to select variables and populating
 # values. Puts it into a single function      
 selectCols = 
@@ -392,7 +392,7 @@ selectCols =
       # Mapping variable values to matrix, using parsing functions
       Values = mapply(substr, list(body), start = locCols[1, ], 
                       stop = locCols[2, ])
-      class(Values)
+      class(Values) #Matrix
       
       colnames(Values) = shortColNames #Adding column name to matrix variables (7193 observations)
         head(Values)
@@ -400,8 +400,8 @@ selectCols =
         #---------------------------------------------------------------------
 
 
-#---------- extractVariables ()  Extract variables for each observation --------
-# Parses the web scrapped data into a matrix of variables, using grep to id location
+#---------- extractVariables ()  REv A Extract variables for each observation --------
+# Parses the web scrapped data into a list of matrices, using grep to id location
 # and variable name: 'name' 'home' 'age' 'gun' 'net', and 'time'.
 # If field does not exists, populates with NA. Puts it into a single function           
 extractVariables = 
@@ -430,14 +430,20 @@ extractVariables =
 #----------- Parsing of txt files for results from Cherry Blossom Race
 #----------- For years 1999 - 2012:  Using
 mfilenames = paste("MenTxt/", 1999:2012, ".txt", sep = "") #Creating Path
-menFiles = lapply(mfilenames, readLines) #Reading lines of .txt files and creating a list, storiing it in menFiles
+menFiles = lapply(mfilenames, readLines) # Reading lines of the 14 .txt files as character vector and
+                                        # creating a list of Char vectors(one for each row in txt file), 
+                                        #  storiing them in menFiles
 names(menFiles) = 1999:2012 # Naming list
+sapply(menFiles, length)
 
 # Creating Matrix of men's results from web-scrapped data, using extractVariables function
 menResMat = lapply(menFiles, extractVariables)
-length(menResMat) # 14 character vectors 1999:2012
+class(menResMat) # A list
+sapply(menResMat,class) # Each entry in menResMat is a matrix
+length(menResMat) # List of 14 character vector Matrices 1999:2012
+        menResMat$`1999`[2,'home']
 
-# Determine the number of observations per list item
+# Determine the number of observations per character vector Matrices
 sapply(menResMat, nrow)
 # 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
 # 3190 3017 3622 3724 3948 4156 4327 5237 5276 5905 6651 6911 7011 7193
@@ -457,59 +463,100 @@ sapply(menResMat, nrow)
 # ----------------------------------------
 # -------------- Data Cleaning 2.3 -------
 
-      #------------------ Sample Code using 2012 as an example; to confirm results of function----------
+      #------------------ Sample Code using 2012 as an example;
+      # --- to confirm results of function----------
       age = as.numeric(menResMat[['2012']][ , 'ag'])
 
       tail(age) # 41 39 56 35 NA 48
+      #-----
 
+# Extract men's Age data from yrs 2009:2012.
+# using as.numeric since all data is character data (Since only 1 type of variable is allowed
+# in a matrix, we have to extract it from the matrix before converting)
 age = sapply(menResMat,
              function(x) as.numeric(x[ , 'ag']))
+# NOTE: Waring messages means that some values could not be converted to numeric, resulting in NA values
+#       Warning messages:
+#         1: In FUN(X[[i]], ...) : NAs introduced by coercion (x3)
 
 
-pdf("CB_BoxplotAgeByYr.pdf", width = 8, height = 5)
+      #------- Figure 2.4 - Boxplot Ages by yr ----
+      # Problems identified through the use of boxplots 2003,2006
+pdf("./Figures/FIg_2.4_CB_BoxplotAgeByYr.pdf", width = 8, height = 5)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
 
 boxplot(age, ylab = "Age", xlab = "Year")
 
 par(oldPar)
 dev.off()
+#-----
 
-head(menFiles[['2003']])
+        #------------------ Sample Code using 2003, 2006 as an example;
+        # --- to confirm results of function----------
+        head(menFiles[['2003']])
+        menFiles[['2006']][2200:2205]
 
-menFiles[['2006']][2200:2205]
+# Notice Age header in 2003 is shifted by 1 character, so we are only grabbing the 1st digit
+# In 2006, some ages are shifted in the column
+# solve both problems by modifying the index for the end of each variable by +1 (include space)
 
+#---------- selectCols () Rev B  Selection of each variable --------
+# Modified previous function to includ spacer modification      
 selectCols = function(shortColNames, headerRow, searchLocs) {
   sapply(shortColNames, function(shortName, headerRow, searchLocs){
     startPos = regexpr(shortName, headerRow)[[1]]
     if (startPos == -1) return( c(NA, NA) )
     index = sum(startPos >= searchLocs)
-    c(searchLocs[index] + 1, searchLocs[index + 1])
+    c(searchLocs[index] + 1, searchLocs[index + 1]) #removed -1
   }, headerRow = headerRow, searchLocs = searchLocs )
 }
+#-------
 
+# Rerun menResMat using updated selectCols function        
 menResMat = lapply(menFiles, extractVariables)
 #womenResMat = lapply(womenFiles, extractVariables)
 
+#ReRun Age extraction
 age = sapply(menResMat, 
              function(x) as.numeric(x[ , 'ag']))
+# NOTE: Waring messages means that some values could not be converted to numeric, resulting in NA values
+#       Warning messages:
+#         1: In FUN(X[[i]], ...) : NAs introduced by coercion (x4)
 
-pdf("CB_BoxplotAgeByYrRevised.pdf", width = 8, height = 5)
+
+#------- Figure 2.5 - Boxplot Ages by yr ----
+# Recreating boxplot for male ages by year
+pdf("./Figures/Fig_2.5_CB_BoxplotAgeByYrRevised.pdf", width = 8, height = 5)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
 boxplot(age, ylab = "Age", xlab = "Year")
 par(oldPar)
 dev.off()
+#----
 
+# Determining number of NA in age variable
 sapply(age,  function(x) sum(is.na(x)))
+# 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
+# 1    1   61    3    2    0   13    2    5    1    2    6    0    1 
 
+# Further investigating year 2001 (61 NA)
 age2001 = age[["2001"]]
 
-grep("^===", menFiles[['2001']])
+# Deternine the line === appears in original .txt file for 2001
+grep("^===", menFiles[['2001']]) # 5
 
+#Determine the location of NA values (post extraction of data) after removal of top 5 rows
 badAgeIndex = which(is.na(age2001)) + 5
-menFiles[['2001']][ badAgeIndex ]
 
+menFiles[['2001']][ badAgeIndex ] #Displaying all lines where age NA
+# All lines are blank except for last entry which is an annotation line
 badAgeIndex
+#[1] 1756 1757 1758 1759 1760 1761 1762 1763 1814 1815 1816 1817 1818 1819 1820 1821 1872 1873 1874 1875 1876
+#[22] 1877 1878 1879 1930 1931 1932 1933 1934 1935 1936 1937 2538 2539 2540 2541 2542 2543 2544 2545 2546 2897
+#[43] 2898 2899 2900 2901 2902 2903 2904 2955 2956 2957 3008 3009 3010 3011 3012 3013 3014 3015 3627
 
+
+#---------- extractVariables ()  Rev B -[FINAL] Extract variables for each observation --------
+# Modified to eliminate blank lines and remove footnotes
 extractVariables = 
   function(file, varNames =c("name", "home", "ag", "gun",
                              "net", "time"))
@@ -538,35 +585,55 @@ extractVariables =
     
     return(Values)
   }
+#----
 
+# Rerun menResMat using updated extractVariables function 
 menResMat = lapply(menFiles, extractVariables)
 #womenResMat = lapply(womenFiles, extractVariables)
 
-which(age2001 < 5)
+which(age2001 < 5) # look at 2001 where age < 5 (3 lines 1377 3063 3112)
 
-menFiles[['2001']][ which(age2001 < 5) + 5 ]
+menFiles[['2001']][ which(age2001 < 5) + 5 ] # look at these lines manually [Ages listed as 0]
 
-charTime = menResMat[['2012']][, 'time']
-head(charTime, 5)
 
-tail(charTime, 5)
 
-timePieces = strsplit(charTime, ":")
+#------ Working with Time variable ------------------
+#-----------------------------------------------------
 
-timePieces[[1]]
+      #------------------ Sample Code using 2012 as an example -------------
+      # Extraction and manipulaton of time character variable.
+      charTime = menResMat[['2012']][, 'time']
+      class(charTime) # Character class
+      head(charTime, 5) # "  45:15 " "  46:28 " "  47:33 " "  47:34 " "  47:40 "
+      
+      tail(charTime, 5) # "2:27:11 " "2:27:20 " "2:27:30 " "2:28:58 " "2:30:59 "
+      
+      # Splitting hh:mm:ss using ':" as the split parameter
+      timePieces = strsplit(charTime, ":")
+      typeof(timePieces) #list of character vectors
+      timePieces[[1]] # "  45" "15 " 
+      
+      tail(timePieces, 1) #  "2"   "30"  "59 "
+      
+      # Converting timePieces from character to numeric
+      timePieces = sapply(timePieces, as.numeric)
+      timePieces[[1]] #  45 15
 
-tail(timePieces, 1)
-
-timePieces = sapply(timePieces, as.numeric)
-
-runTime = sapply(timePieces, 
+      # Combine timePieces character vectors into a numeric variable
+      # in minutes 60*hrs + min + sec/60
+      runTime = sapply(timePieces, 
                  function(x) {
                    if (length(x) == 2) x[1] + x[2]/60
                    else 60*x[1] + x[2] + x[3]/60
                  })
 
-summary(runTime)
+      summary(runTime)
+      # Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+      # 45.25   77.57   87.47   88.43   97.78  150.98
 
+#---------- convertTime ()  Rev A Extracts time variable for each observation --------
+# --------- splits time, using ':' then converts timePieces to numeric and
+#---------- coverts and records results in minutes
 convertTime = function(time) {
   timePieces = strsplit(time, ":")
   timePieces = sapply(timePieces, as.numeric)
@@ -576,13 +643,17 @@ convertTime = function(time) {
   })
 }
 
+#---------- createDF ()  Rev A Crates DataFrame from menResMat --------
+# Creating a dataframe with the data from menResMat
+# Dataframe will include new variables to track 'sex' and 'year',
+# which are currently not part of the data within the matrices
 createDF = 
   function(Res, year, sex) 
   {
-    # Determine which time to use
-    useTime = if( !is.na(Res[1, 'net']) )  
+    # Determine which time to use 'net','gun','time'
+    useTime = if( !is.na(Res[1, 'net']) )  # Net time gets top priority if it exists
       Res[ , 'net']
-    else if( !is.na(Res[1, 'gun']) ) 
+    else if( !is.na(Res[1, 'gun']) ) # gun time gets second priority
       Res[ , 'gun']
     else 
       Res[ , 'time']
@@ -599,13 +670,29 @@ createDF =
     invisible(Results)
   }
 
+# Creating list of dataframe with: year, sex,name,home,age,runtime, using createDF function
 menDF = mapply(createDF, menResMat, year = 1999:2012,
                sex = rep("M", 14), SIMPLIFY = FALSE)
+# There were 50 or more warnings (use warnings() to see the first 50)
+typeof(menDF) #list with 14 elements
+sapply(menDF,class) # 14 DataFrames
 
 warnings()[ c(1:2, 49:50) ]
+# 1: In lapply(X = X, FUN = FUN, ...) : NAs introduced by coercion
+# 2: In lapply(X = X, FUN = FUN, ...) : NAs introduced by coercion
+# 3: In lapply(X = X, FUN = FUN, ...) : NAs introduced by coercion
+# 4: In lapply(X = X, FUN = FUN, ...) : NAs introduced by coercion
 
+# Checking to see if NAs are coming from time conversion runTime.
+# Errors coming from yr 2006, 2007,2009,2010
 sapply(menDF, function(x) sum(is.na(x$runTime)))
+# 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
+# 0    0    0    0    0    0    0 5232   83    0   72   68    1    0 
 
+
+#---------- createDF ()  Rev B - [FINAL] Crates DataFrame from menResMat --------
+# -- modifies original function to strip tramp characters from time '#','*',' [[blanks]]'
+# -- Drops observations with no time 
 createDF = function(Res, year, sex) 
 {
   # Determine which time to use
@@ -629,18 +716,47 @@ createDF = function(Res, year, sex)
   invisible(Results)
 }
 
+# Rerun updated createDF Function
 menDF = mapply(createDF, menResMat, year = 1999:2012,
                sex = rep("M", 14), SIMPLIFY = FALSE)
 
 sapply(menDF, function(x) sum(is.na(x$runTime)))
+# 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
+# 0    0    0    0    0    0    0 5232    0    0    0    0    0    0 
 
-separatorIdx = grep("^===", menFiles[["2006"]])
-separatorRow = menFiles[['2006']][separatorIdx]
+#Displaying 2006 runTime data.  (home variable include home and time;  time variable includes NA)
+menDF$`2006`[1:3,c('home','runTime')] 
+# home runTime
+# 1 Kenya             47:24       NA
+# 2 Kenya             47:34       NA
+# 3 Kenya             47:38       NA
+
+#Looking back at original file to determine issue
+menFiles[['2006']][6:10]
+# [6] ""                                                                                         
+# [7] "Place Div/Tot  Num    Name                   Ag Hometown        Net Tim Gun Tim  Pace  S "
+# [8] "===== ======== ====== ====================== == ======================= =======  ===== = "
+# [9] "    1   1/2892      1 Gilbert Okari          27 Kenya             47:24   47:25#  4:45   "
+# [10] "    2   2/2892     11 Samuel Ndereba         29 Kenya             47:34   47:35#  4:46   "
+
+# Notice that Net Time header is joined with Hometown, so it does not recognize that this is 2 variables
+# and not 1 variable.  We will need to split 'home' variable up into 2 variables
+
+# Manually adjusting time data for year 2006
+separatorIdx = grep("^===", menFiles[["2006"]]) # Line 8
+separatorRow = menFiles[['2006']][separatorIdx] # Extracting Separator Row
+          separatorRow
+          nchar(separatorRow) #89
+          substr(separatorRow,40,80)
+
 separatorRowX = paste(substring(separatorRow, 1, 63), " ", 
-                      substring(separatorRow, 65, nchar(separatorRow)), 
-                      sep = "")
-menFiles[['2006']][separatorIdx] = separatorRowX
+                      substring(separatorRow, 65, nchar(separatorRow)), # Manually imparting a ' ' character
+                      sep = "")                                         # in separatorRow @ chr 64, so 
+                                                                        # extractVariable function will
+                                                                        # work properly
+menFiles[['2006']][separatorIdx] = separatorRowX # overwriting original speratorRow with modified one
 
+# Rerun extractVariables function, utilizing modified separator for Yr 2006
 menResMat = sapply(menFiles, extractVariables)
 menDF = mapply(createDF, menResMat, year = 1999:2012,
                sex = rep("M", 14), SIMPLIFY = FALSE)
@@ -656,15 +772,39 @@ menDF = mapply(createDF, menResMat, year = 1999:2012,
 #womenDF = mapply(createDF, womenResMat, year = 1999:2012,
 #               sex = rep("W", 14), SIMPLIFY = FALSE)
 
-pdf("CB_BoxplotTimeByYr.pdf", width = 8, height = 5)
+
+
+#------- Figure 2.5b - Boxplot time by yr (Men)----
+# Preliminary view of data, to discover any problems with data
+# Time data looks fine, no obvious issues
+pdf("./Figures/FIg_2.5B_CB_BoxplotTimeByYr.pdf", width = 8, height = 5)
 boxplot(sapply(menDF, function(x) x$runTime), 
         xlab = "Year", ylab = "Run Time (min)")
 dev.off()
+#----
 
-cbMen = do.call(rbind, menDF)
-save(cbMen, file = "cbMen.rda")
+# Since we have added the yr and sex variables, we can convert
+# the yearly dataframes into 1 single dataframe and save them to .rda 
+# and csv files
+cbMen = do.call(rbind, menDF) # 70070 observations x 6 variables
 
-dim(cbMen)
+path <- paste0('./MenTxt') # path base is current_path
+# Checking to see if data file path exists, if not, it creates it
+if (dir.exists(path) == FALSE){ dir.create(path,recursive = TRUE)}
+
+# Write dataframe as a csv file, in proper subdirectory (MenTxt or WomenTxt)
+write.csv(cbMen, file = paste0(path,'/cbMen.csv'))
+# Write dataframe as R data file
+save(cbMen, file = "./MenTxt/cbMen.rda")
+
+dim(cbMen) # 70070 observations x 6 variables
+
+#####################################################################################################
+#####################################################################################################
+################           Data Exploration
+################
+
+
 
 load("cbMen.rda")
 

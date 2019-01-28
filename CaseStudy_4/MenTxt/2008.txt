@@ -2395,7 +2395,7 @@ Place Div  /Tot   Num    Name                   Ag Hometown           5 Mi    Pa
  2387   191/374     9885 Trevor Branon          24 Richmond VA          42:27  8:30   52:41  8:29 1:24:00  8:24 
  2388   251/575     3449 Larry Denino           47 Greensburg PA        40:16  8:04   50:42  8:10 1:24:01  8:25 
  2389   345/770     7358 Brian Norris           40 Arlington VA         43:19  8:40   53:29  8:37 1:24:01  8:25 
- 2390   486/1150    8220 Roberto Pe±a           27 Washington DC        42:21  8:29   52:26  8:27 1:24:02  8:25 
+ 2390   486/1150    8220 Roberto Pe<U+623C><U+3E31>a           27 Washington DC        42:21  8:29   52:26  8:27 1:24:02  8:25 
  2391   252/575     7906 William Pitchford      46 Fairfax VA           41:21  8:17   51:41  8:19 1:24:02  8:25 
  2392   487/1150    8031 Brian Herskowitz       29 Chevy Chase MD       41:37  8:20   51:57  8:22 1:24:03  8:25 
  2393   405/1013    6279 Erik Oberg             37 Fairfax VA           43:48  8:46   53:44  8:39 1:24:04  8:25 
