@@ -801,14 +801,17 @@ dim(cbMen) # 70070 observations x 6 variables
 
 #####################################################################################################
 #####################################################################################################
-################           Data Exploration
+################          2.4 Data Exploration
 ################
 
 
+# Loading Men's data file from hard-drive.
+load("./MenTxt/cbMen.rda")
 
-load("cbMen.rda")
-
-pdf("CB_Overplot.pdf", width = 8, height = 6)
+#------- Figure 2.6 - ScatterPlot Age vs Run Time (Men)----
+# Preliminary view of men's data, to discover any problems with data
+# Ylimit were introduced, to screen out erroneous Run times
+pdf("./Figures/Fig_2.6_CB_Overplot.pdf", width = 8, height = 6)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
 
 plot(runTime ~ age, data = cbMen, ylim = c(40, 180),
@@ -816,44 +819,64 @@ plot(runTime ~ age, data = cbMen, ylim = c(40, 180),
 
 par(oldPar)
 dev.off()
+#----
 
+# To improve the appearance of graphics(colors), we will load the RColorBrewer package
 library(RColorBrewer)
-ls("package:RColorBrewer")
+      ls("package:RColorBrewer")
+      display.brewer.all()
 
-display.brewer.all()
+Purples8 = brewer.pal(9, "Purples")[8] # Selecting the 8 color in the Purple pallett
+Purples8 # RGB hex code for the color: #54278F   54 Red, 27 Blue, 8F Green
+Purples8A = paste(Purples8, "14", sep = "") # appending the Alpha value to the RGB value, for transparency
 
-Purples8 = brewer.pal(9, "Purples")[8]
-Purples8
 
-Purples8A = paste(Purples8, "14", sep = "")
-
-pdf("CB_OverplotTransparent.pdf", width = 8, height = 6)
+#------- Figure 2.7 - ScatterPlot Age vs Run Time (Men)----
+# Improved graphics for view of men's data, using colors, transparency,
+# reduced symbol size and shape, and add jitter to age
+pdf("./Figures/Fig_2.7_CB_OverplotTransparent.pdf", width = 8, height = 6)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
 plot(runTime ~ jitter(age, amount = 0.5), 
      data = cbMen, 
-     pch = 19,cex = 0.2, col = Purples8A,
+     pch = 19,cex = 0.25, col = Purples8A,
      ylim = c(45, 165), xlim = c(15, 85),
      xlab = "Age (years)", ylab = "Run Time (minutes)")
 par(oldPar)
 dev.off()
+#-----
 
-pdf("CB_SmoothScatter.pdf", width = 8, height = 6)
+#?smoothScatter()
+?colorRampPalette()
+#------- Figure 2.8 - ScatterPlot Age vs Run Time (Men)----
+# Improved graphics for view of men's data, using smoothScatter(),
+# color is determined by density of data points within a small region
+# around that point. 2D kernel density
+pdf("./Figures/FIg_2.8_CB_SmoothScatter.pdf", width = 8, height = 6)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
 
 smoothScatter(y = cbMen$runTime, x = cbMen$age,
               ylim = c(40, 165), xlim = c(15, 85),
+              colramp = colorRampPalette(c("ivory", Purples8A)),
               xlab = "Age (years)", ylab = "Run Time (minutes)")
 
 par(oldPar)
 dev.off()
+#-----
 
+# Extracting Men's run times (>30min) and runner's age (>15)
 cbMenSub = cbMen[cbMen$runTime > 30 &
                    !is.na(cbMen$age) & cbMen$age > 15, ]
+max(cbMenSub$age)
+# Creating Age categories for runners [15:75] in 10yr steps and max Age
+ageCat = cut(cbMenSub$age, breaks = c(seq(15, 75, 10), max(cbMenSub$age)))
+# (15,25] (25,35] (35,45] (45,55] (55,65] (65,75] (75,89] 
+# 5804   25432   20535   12212    5001     751      69 
 
-ageCat = cut(cbMenSub$age, breaks = c(seq(15, 75, 10), 90))
-table(ageCat)
+table(ageCat) # Creating a table of age categories
 
-pdf("CB_Boxplots.pdf", width = 8, height = 6)
+#------- Figure 2.9 - BoxPlot Run Time by Age Grouping (Men)----
+# 
+pdf("./Figures/Fig_2.9_CB_Boxplots.pdf", width = 8, height = 6)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
 
 plot(cbMenSub$runTime ~ ageCat, 
@@ -861,57 +884,192 @@ plot(cbMenSub$runTime ~ ageCat,
 
 par(oldPar)
 dev.off()
+#-----
 
+# Creation of a linear model for the runtime vs age data
 lmAge = lm(runTime ~ age, data = cbMenSub)
 
 lmAge$coefficients
+#Linear Model Coefficients
+# (Intercept)         age 
+# 78.757076    0.225285 
 
 summary(lmAge)
+      # Call:
+      #   lm(formula = runTime ~ age, data = cbMenSub)
+      # 
+      # Residuals:
+      #   Min      1Q  Median      3Q     Max 
+      # -40.333 -10.221  -0.952   9.103  82.425 
+      # 
+      # Coefficients:
+      #   Estimate Std. Error t value Pr(>|t|)    
+      # (Intercept) 78.75708    0.20771  379.17   <2e-16 ***
+      #   age          0.22529    0.00517   43.58   <2e-16 ***
+      #   ---
+      #   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+      # 
+      # Residual standard error: 14.77 on 69802 degrees of freedom
+      # Multiple R-squared:  0.02648,	Adjusted R-squared:  0.02647 
+      # F-statistic:  1899 on 1 and 69802 DF,  p-value: < 2.2e-16
 
-class(lmAge)
+class(lmAge) # "lm"
 
-pdf("CB_ResidSimpleLM.pdf", width = 8, height = 6)
+# To access how well the lm model fits the data, wer will plot the residuals
+# versus age
+
+#------- Figure 2.10 - Linerar Model Residual scatter Plot with overlays(Men)----
+# Smoothed Scatter plot; Includes horizontal line overlay at y=0 and local smooth polynomial
+# fitted line of residuals (for the fit at point x, the fit is made using points 
+# in a neighbourhood of x, weighted by their distance from x)these have tricubic 
+# weighting (proportional to (1 - (dist/maxdist)^3)^3)
+
+pdf("./Figures/Fig_2.10_CB_ResidSimpleLM.pdf", width = 8, height = 6)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
 
 smoothScatter(x = cbMenSub$age, y = lmAge$residuals,
-              xlab = "Age (years)", ylab = "Residuals")
-abline(h = 0, col = "purple", lwd = 3)
+              xlab = "Age (years)", ylab = "Residuals",
+              colramp = colorRampPalette(c("ivory", Purples8A)))
+abline(h = 0, col = "darkred", lwd = 3) # Horizontal line y=0
 
+# Local weighted averages of the residuals. Contains fitted values 
+# for the local weighted avg of residuals
 resid.lo = loess(resids ~ age, 
                  data = data.frame(resids = residuals(lmAge),
                                    age = cbMenSub$age))
-
+#?loess()
 age20to80 = 20:80
 
+# Using the values of the locally weighted residuals (redid.lo),
+# then using predict() function to predict the loess value for each
+# age. Thus, creating a dataframe of predicted loess of residuals vs age
 resid.lo.pr = 
-  predict(resid.lo, newdata = data.frame(age = age20to80))
+  predict(resid.lo, newdata = data.frame(age = age20to80)) # Predictions of value of line
 
+# Creating a line using the resid.lo.pr values
 lines(x = age20to80, y = resid.lo.pr, col = "green", lwd = 2)
 par(oldPar)
 dev.off()
+#--------
 
+# It appears that a simple linear model tends to underestimate the finish times for male
+# runners over the age of 60
+
+
+##--------------------------------------------------------
+# Since linear model is not an ideal predictor for this dataset, we want to switch
+# gears somewhat and attempt to find another solution the better models the dataset
+# 2 options are:
+# A) Piecewise Linear function
+# B) Loess Curve
+##------------------------------------
+
+
+# To investigate these 2 options, we will the two models vs runner's age
+
+####### Loess Curve
+# Calculate the locally weighted average for the runner's time by age
 menRes.lo = loess(runTime ~ age, cbMenSub)
 
+# Using the values of the locally weighted run times (menRes.lo),
+# then using predict() function to predict the loess value for each
+# age. Thus, creating a dataframe of predicted loess run times vs age
 menRes.lo.pr = predict(menRes.lo, data.frame(age = age20to80))
 
-over50 = pmax(0, cbMenSub$age - 50)
 
-lmOver50 = lm(runTime ~ age + over50, data = cbMenSub)
 
-summary(lmOver50)
+####### Piecewise Liner Model
 
-decades = seq(30, 60, by = 10)
+        #-------- Sample code for testing purposes --------
+        #Creating a piecewise LM segment from 50+ yo runners
+        #Determine if runner was over 50, if so, by how many years
+        over50 = pmax(0, cbMenSub$age - 50) # takes maximum value of age-50 or 0, produces a vector
+        
+        # Create a linear model of runners over age of 50 
+        lmOver50 = lm(runTime ~ age + over50, data = cbMenSub)
+        
+        summary(lmOver50)
+        # From the summary, formula (a - 50c) + (b+c)age
+        #  a = 82.75
+        #  b = 0.105 slope of line
+        #  c = 0.563 change in slope after 50 yrs old
+        # so, for every year above 50, times increase by 0.67 minutes a year
+        # before 50, time decrease by 0.106 minutes for every year below 50
+        
+        # Call:
+        #   lm(formula = runTime ~ age + over50, data = cbMenSub)
+        # 
+        # Residuals:
+        #   Min      1Q  Median      3Q     Max 
+        # -40.265 -10.099  -0.881   9.061  79.044 
+        # 
+        # Coefficients:
+        #   Estimate Std. Error t value Pr(>|t|)    
+        # (Intercept) 82.755465   0.265049  312.23   <2e-16 ***
+        #   age          0.105681   0.007147   14.79   <2e-16 ***
+        #   over50       0.563889   0.023372   24.13   <2e-16 ***
+        #   ---
+        #   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+        # 
+        # Residual standard error: 14.71 on 69801 degrees of freedom
+        # Multiple R-squared:  0.03453,	Adjusted R-squared:  0.03451 
+        # F-statistic:  1248 on 2 and 69801 DF,  p-value: < 2.2e-16
+
+######### 
+#Creating a piecewise LM segments from 30+ yo runners, in increments of 10 yrs
+
+decades = seq(30, 60, by = 10) # Creating decades vector
+# Creating 4 vectors (one for each decade) and subtracting the runner's age from value
 overAge = lapply(decades, 
                  function(x) pmax(0, (cbMenSub$age - x)))
 names(overAge) = paste("over", decades, sep = "")
 overAge = as.data.frame(overAge)
 tail(overAge)
+#         over30  over40 over50 over60
+# 69799     36     26     16      6
+# 69800     11      1      0      0
+# 69801      9      0      0      0
+# 69802     26     16      6      0
+# 69803      5      0      0      0
+# 69804     18      8      0      0
+#By comparison, Ages of last 6 runners in dataset
+# 66
+# 41
+# 39
+# 56
+# 35
+# 48
 
+# Creating a piecewise linear model with breaks at 30,40,50,60 yr age vs runTime
 lmPiecewise = lm(runTime ~ . , 
                  data = cbind(cbMenSub[, c("runTime", "age")], 
                               overAge))
-
 summary(lmPiecewise)
+# Residuals:
+#   Min      1Q  Median      3Q     Max 
+# -40.921 -10.119  -0.885   9.023  78.965 
+# 
+# Coefficients:
+#               Estimate    Std. Error  t value   Pr(>|t|)    
+# (Intercept)    74.227662  0.915265  81.100  < 2e-16 ***
+#   age          0.424331   0.033208  12.778  < 2e-16 ***
+#   over30      -0.477114   0.047779  -9.986  < 2e-16 ***
+#   over40       0.221650   0.040667   5.450 5.04e-08 ***
+#   over50       0.494407   0.052933   9.340  < 2e-16 ***
+#   over60      -0.003592   0.077656  -0.046    0.963    
+# ---
+#   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+# 
+# Residual standard error: 14.7 on 69798 degrees of freedom
+# Multiple R-squared:  0.03593,	Adjusted R-squared:  0.03586 
+# F-statistic: 520.3 on 5 and 69798 DF,  p-value: < 2.2e-16
+
+
+##########################################################
+#########################################################
+##### STOPPING POINT
+#####
+
 
 overAge20 = lapply(decades, function(x) pmax(0, (age20to80 - x)))
 names(overAge20) = paste("over", decades, sep = "")
