@@ -846,7 +846,7 @@ dev.off()
 #-----
 
 #?smoothScatter()
-?colorRampPalette()
+#?colorRampPalette()
 #------- Figure 2.8 - ScatterPlot Age vs Run Time (Men)----
 # Improved graphics for view of men's data, using smoothScatter(),
 # color is determined by density of data points within a small region
@@ -1065,47 +1065,56 @@ summary(lmPiecewise)
 # F-statistic: 520.3 on 5 and 69798 DF,  p-value: < 2.2e-16
 
 
-##########################################################
-#########################################################
-##### STOPPING POINT
-#####
 
 
+# When we want to plot the piecewise linear funtion, we need to
+# invoke the predict() function, to provide the fitted values for
+# each age value (20-80). We first need to create a dataframe with
+# all the covariates (ie. dataframe for each age in range).
+# so predict can use these values in its predictions
 overAge20 = lapply(decades, function(x) pmax(0, (age20to80 - x)))
 names(overAge20) = paste("over", decades, sep = "")
 overAgeDF = cbind(age = data.frame(age = age20to80), overAge20)
+head(overAgeDF,5)
+# age over30 over40 over50 over60
+# 1  20      0      0      0      0
+# 2  21      0      0      0      0
+# 3  22      0      0      0      0
+# 4  23      0      0      0      0
+# 5  24      0      0      0      0
+tail(overAgeDF,5)
+# age over30 over40 over50 over60
+# 57  76     46     36     26     16
+# 58  77     47     37     27     17
+# 59  78     48     38     28     18
+# 60  79     49     39     29     19
+# 61  80     50     40     30     20
 
-tail(overAgeDF)
-
+# Calling predict function, using results of previous lmPiecewise function
+# and the 'standard' overAgeDF covariates DF
 predPiecewise = predict(lmPiecewise, overAgeDF)
 
-plot(predPiecewise ~ age20to80,
-     type = "l", col = "purple", lwd = 3,
-     xlab = "Age (years)", ylab = "Run Time Prediction")
-
-lines(x = age20to80, y = menRes.lo.pr, 
-      col = "green", lty = 2, lwd = 3)
-legend("topleft", col = c("purple", "green"),
-       lty = c(1, 2), lwd= 3,
-       legend = c("Piecewise Linear", "Loess Curve"), bty = "n")
-
-pdf("CB_PiecewiseLoessCurves.pdf", width = 8, height = 6)
+#------- Figure 2.11 - Piecewise Linear & Loess Model RunTime vs Age (Men)----
+# Piecewise linear with inflection points at 30,40,50,60 yrs
+pdf("./Figures/Fig_2.11_CB_PiecewiseLoessCurves.pdf", width = 8, height = 6)
+oldPar = par(mar = c(4.1, 4.1, 1, 1))
 plot(predPiecewise ~ age20to80,
      type = "l", col = "#984ea3", lwd = 3,
      #   type = "l", col = "purple", lwd = 2,
      xlab = "Age (years)", ylab = "Run Time Prediction")
 
-lines(x = age20to80, y = menRes.lo.pr, col = "#4daf4a", lwd = 3, lty = 2)
+lines(x = age20to80, y = menRes.lo.pr, 
+      col = "#4daf4a", lwd = 3, lty = 2)
 legend("topleft", col = c("#984ea3", "#4daf4a"), lty = c(1, 2), lwd = 3,
        legend = c("Piecewise Linear", "Loess Curve"), bty = "n")
-
-#lines(x = age20to80, y = menRes.lo.pr, col = "green", lwd = 2)
-#legend("topleft", col = c("purple", "green"), lty = 1, lwd = 2,
-#       legend = c("Piecewise Linear", "Loess Curve"), bty = "n")
+par(oldPar)
 dev.off()
+#------
 
 
-pdf("CB_NumRunnersLinePlot.pdf", width = 8, height = 6)
+#------- Figure 2.12 - Number of Runners by Year (Men)----
+# To get a feeling of how participation varies over the years
+pdf("./Figures/Fig_2.12_CB_NumRunnersLinePlot.pdf", width = 8, height = 6)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
 
 numRunners = with(cbMen, tapply(runTime, year, length))
@@ -1113,12 +1122,25 @@ plot(numRunners ~ names(numRunners), type="l", lwd = 2,
      xlab = "Years", ylab = "Number of Runners")
 par(oldPar)
 dev.off()
+#------
 
+# Comparing the performance between earliest and latest years (Men)
+# Note: World record time: 44:24
 summary(cbMenSub$runTime[cbMenSub$year == 1999])
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+# 46.98   74.82   84.29   84.35   93.06  170.83 
 
 summary(cbMenSub$runTime[cbMenSub$year == 2012])
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+# 45.25   77.57   87.47   88.44   97.78  150.98
 
-pdf("CB_AgeDensity99vs12.pdf", width = 8, height = 6)
+# The min time has dropped but the 1stQTR Med and 3rdQTR have increased through the years.
+# Could this be because the average age had increased and/or make-up of runners has changed (pro vs recreational)
+
+
+#------- Figure 2.13 - Age Density comparison 1999 vs 2012 by Year (Men)----
+# To get a feeling of how age of participation varies between 1999 & 2012
+pdf("./Figures/Fig_2.13_CB_AgeDensity99vs12.pdf", width = 8, height = 6)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
 
 age1999 = cbMenSub[ cbMenSub$year == 1999, "age" ]
@@ -1134,32 +1156,31 @@ legend("topleft", col = c("purple", "green"), lty= 1:2, lwd = 3,
 
 par(oldPar)
 dev.off()
+#-----
 
+# The results of the grpah show something peculiar.  The age density for 2012 shows that
+# there were more younger runners than in 1999.  Which should have produced lower statistics 
+# for 2012 vs 1999 (Younger runners run faster...).  This must mean that the demographics of
+# the runners has changed (less pro racers vs amatures????)
+
+# ------ QQ Plot age of Male racers yr 1999 vs 2012----- NOT Plotted to PDF
 qqplot(age1999, age2012, pch = 19, cex = 0.5, 
        ylim = c(10,90), xlim = c(10,90), 
        xlab = "Age in 1999 Race",
        ylab = "Age in 2012 Race", 
        main = "Quantile-quantile plot of male runner's age")
 abline(a =0, b = 1, col="red", lwd = 2)
+#-------
 
+#------- Figure 2.14 - Loess Model RunTime vs Age (Men) for yrs 1999 & 2012 only----
+# Similar to Fig 2.11 but only looking at 2 year of data
 mR.lo99 = loess(runTime ~ age, cbMenSub[ cbMenSub$year == 1999,])
 mR.lo.pr99 = predict(mR.lo99, data.frame(age = age20to80))
 
 mR.lo12 = loess(runTime ~ age, cbMenSub[ cbMenSub$year == 2012,])
 mR.lo.pr12 = predict(mR.lo12, data.frame(age = age20to80))
 
-plot(mR.lo.pr99 ~ age20to80,
-     type = "l", col = "purple", lwd = 3,
-     xlab = "Age (years)", ylab = "Fitted Run Time (minutes)")
-
-lines(x = age20to80, y = mR.lo.pr12,
-      col = "green", lty = 2, lwd = 3)
-
-legend("topleft", col = c("purple", "green"), lty = 1:2, lwd = 3,
-       legend = c("1999", "2012"), bty = "n")
-
-
-pdf("CB_Loess99vs12.pdf", width = 8, height = 6)
+pdf("./Figures/FIg_2.14_CB_Loess99vs12.pdf", width = 8, height = 6)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
 
 plot(mR.lo.pr99 ~ age20to80,
@@ -1170,33 +1191,89 @@ legend("topleft", col = c("#984ea3", "#4daf4a"), lty = 1:2, lwd = 3,
        legend = c("1999", "2012"), bty = "n")
 par(oldPar)
 dev.off()
+#-----
 
+
+# Creating a variable quantifying the difference between Loess prediction
+# modes for 1999 and 2012 
 gap14 = mR.lo.pr12 - mR.lo.pr99
 
-pdf("CB_DifferenceInFittedCurves.pdf", width = 8, height = 6)
+
+#------- Figure 2.15 - Difference between Loess Model RunTime vs Age (Men) for yrs 1999 & 2012 only----
+pdf("./Figures/Fig_2.15_CB_DifferenceInFittedCurves.pdf", width = 8, height = 6)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
 
 plot(gap14 ~ age20to80, type = "l" , xlab = "Age (years)", 
-     ylab = "Difference in Fitted Curves (minutes)", lwd = 2)
+     ylab = "Difference in Fitted Curves(2012 - 2009) (minutes)", lwd = 2)
 par(oldPar)
 dev.off()
+# -----
 
-fastestMan = tapply(menRes$time, menRes$age, min, na.rm = TRUE)
-plot(fastestMan ~ names(fastestMan), type ="l", xlim = c(20, 80))
-ageFM = as.numeric(names(fastestMan))
-mR.loF = loess(fastestMan ~ ageFM)
-mR.lo.prF = predict(mR.loF, data.frame(age = ageFM), se = FALSE)
+# The Fig 2.15 graph shows that the finish times for 2012, for runners less than 50 yrs old were slower
+# than those of 1999.  Does this mean that more amature runners are participating in the race vs the
+# first few years?
+
+
+#------- Figure NA - FastestMan by Age actual & Loess prediction----
+pdf("./Figures/Fig_NA_FastestManLoessPredictedCurves.pdf", width = 8, height = 6)
+
+# Determines fastest runner's time for each age using all years(men)
+fastestMan = tapply(cbMenSub$runTime, cbMenSub$age, min, na.rm = TRUE)
+# Example fastestMan
+#  16        17        18        19 .....
+# 55.91667  55.50000  56.16667  45.96667 ....
+oldPar = par(mar = c(4.1, 4.1, 1, 1))
+plot(fastestMan ~ names(fastestMan), type ="l", xlim = c(20, 90), col = 'blue')
+
+ageFM = as.numeric(names(fastestMan)) #List of ages with fastestMan data
+mR.loF = loess(fastestMan ~ ageFM) # Using FastestMan data to loess model, (only data is fastest for each
+                                    #  age )
+mR.lo.prF = predict(mR.loF, data.frame(age = ageFM), se = FALSE) # Predicts the time for each year based on
+                                                                # the loess model created from FastestMan dataset
+# Sameple output of mR.lo.prF
+# 1         2         3         4 
+#50.97034  50.43490  49.93866  49.48353
+
+# Plotting loess prediction of FastestMan dataset
 lines(x = ageFM, y = mR.lo.prF, col = "purple", lwd = 2)
+legend("topleft", col = c("blue", "purple"), lty = 1:1, lwd = 3,
+       legend = c("Fastest Man", "Loess Predition"), bty = "n")
+par(oldPar)
+dev.off()
+#------
 
-timeNorm = menRes$time / mR.lo.prF[as.character(menRes$age)]
-time99Norm = timeNorm[menRes$year == 1999]
-time12Norm = timeNorm[menRes$year == 2012]
+
+
+
+timeNorm = cbMenSub$runTime / mR.lo.prF[as.character(cbMenSub$age)]
+# mR.lo.prF (first 4 values) - predicted values of fastest runner for each age group
+# 28       24       27       28         ....
+# 52.23179 50.28427 51.77801 52.23179   ....
+# cbMenSub[1:4,c('age','runTime')]
+# Index    age    runTime
+# 1999.1   28   46.98333
+# 1999.2   24   47.01667
+# 1999.3   27   47.05000
+# 1999.4   28   47.11667
+#
+# timeNorm[1:4]
+# 28        24        27        28 
+# 0.8995161 0.9350175 0.9086869 0.9020688 
+
+time99Norm = timeNorm[cbMenSub$year == 1999]
+time12Norm = timeNorm[cbMenSub$year == 2012]
 summary(time99Norm)
+#   Min.    1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#  0.7285  1.2399  1.4056  1.4228  1.5908  2.5189       9 
 
 summary(time12Norm)
+#   Min.    1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#  0.6967  1.3118  1.5126  1.5315  1.7255  2.7663      13 
 
+#------- Figure NA - Time Distribution of Runners vs predicted fastest time for each Age group ----
+pdf("./Figures/Fig_NA_TimeDistribution_vs_PredictedFastestTimePerAgeGroup.pdf", width = 10, height = 6)
 plot(density(100*time99Norm, na.rm = TRUE), 
-     # ylim = c(0, 0.05), 
+     ylim = c(0, 0.016), 
      col = "purple",
      lwd = 3,  xlab = "Time (percentage)",
      main = "Time Distribution for 1999 and 2012 Runners\n Percentage of the fastest runner for that age")
@@ -1204,117 +1281,245 @@ lines(density(100*time12Norm, na.rm = TRUE),
       lwd = 3, col = "green")
 legend("topleft", fill = c("purple", "green"),
        legend = c("1999", "2012"), bty = "n")
+par(oldPar)
+dev.off()
+#-----
 
 
+#------------------- Section 2.5 --------------------------------------------
+#-------------------  Switching over to individuals runners across years ----
+
+# Want to start tracking runners that participated in race more than 1
+# year.  Will use name, age, and hometown to identify these individuals
+# (Was no unique identifier supplied to each individual)
+
+# start by trimming the blanks from the name variables
+
+# Create a function that removes blanks at the beginning,
+# end, and multiple blanks between first and last names
 trimBlanks = function(charVector) {
-  nameClean = gsub("^[[:blank:]]+", "", charVector)
-  nameClean = gsub("[[:blank:]]+$", "", nameClean)
-  nameClean = gsub("[[:blank:]]+", " ", nameClean)
+  nameClean = gsub("^[[:blank:]]+", "", charVector)# beginning
+  nameClean = gsub("[[:blank:]]+$", "", nameClean) # end
+  nameClean = gsub("[[:blank:]]+", " ", nameClean) #multiple between, replaced with 1 blank
 }
 
+# Create a vector of cleaned names
 nameClean = trimBlanks(cbMenSub$name)
+# [1] "Worku Bikila"         "Lazarus Nyakeraka"    "James Kariuki"        "William Kiptum"
 
-length(nameClean)
+length(nameClean) #69804
+length(unique(nameClean)) #42882
 
-length(unique(nameClean))
-
+# how many times a name appears in
 table(table(nameClean))
+# 1      2     3     4    5     6     7     8     9   10  11  12  13  14  15  17  18  19  30 
+#29291  7716  2736  1386  712   417   249   149   92  56  44  19  7   3   1   1   1   1   1
 
+# Most common name
 head( sort(table(nameClean), decreasing = TRUE), 1)
+#Michael Smith 
+#30
 
+# Selecting all Michael Smith's and seeing where they live
 mSmith = cbMenSub[nameClean == "Michael Smith", ]
-
 head(unique(mSmith$home))
+#1] "Annapolis MD       "  "Bethesda MD        "  " Annapolis MD       " " Chevy Chase MD     " " Annandale VA  
 
+#To aid in cleaning the home variable, switch all characters to lowercase
 nameClean = tolower(nameClean)
+head( sort(table(nameClean), decreasing = TRUE), 1) # now we have 33 unique entries for Michael Smith
 
-head( sort(table(nameClean), decreasing = TRUE), 1)
+nameClean = gsub("[,.]", "", nameClean) # removing , . from home
 
-nameClean = gsub("[,.]", "", nameClean)
-
+#How many times a name appears in a given year
+# Creates a table with every name in database, for all years, and how many times it appears in each year
 tabNameYr = table(cbMenSub$year, nameClean)
+max(tabNameYr) # 5 runners with same name in 1 yr
 
-max(tabNameYr)
+class(tabNameYr) # table
+mode(tabNameYr) # numeric
+names(attributes(tabNameYr)) #"dim"   "dimnames" "class" 
 
-class(tabNameYr)
+dim(tabNameYr)#14 39133  14
+head(colnames(tabNameYr), 3) #"8illiam maury"   "a gudu memon"    "a miles simmons"
 
-mode(tabNameYr)
-
-names(attributes(tabNameYr))
-
-dim(tabNameYr)
-
-head(colnames(tabNameYr), 3)
-
-which( tabNameYr == max(tabNameYr) )
+which( tabNameYr == max(tabNameYr) ) #356496
 
 which( tabNameYr == max(tabNameYr), arr.ind = TRUE )
+#       Row Col
+# 2012 14   25464
 
 indMax = which( tabNameYr == max(tabNameYr), arr.ind = TRUE )
-colnames(tabNameYr)[indMax[2]]
+colnames(tabNameYr)[indMax[2]] #"michael brown"
 
+# add cleaned name to our men's dataframe as an additional variable
 cbMenSub$nameClean = nameClean
 
+# Creating a year of birth variable by subtracting runner's age from the year of competition
 cbMenSub$yob = cbMenSub$year - cbMenSub$age
 
-# Fix home in a similar way
+# Fix home in a similar way and add it to the dataframe
 homeClean = trimBlanks(tolower(cbMenSub$home))
 cbMenSub$homeClean = gsub("[,.]", "", homeClean)
 
+# exploring dataset variable subsetted for viewing all 'michael brown's'
 vars = c("year", "homeClean", "nameClean", "yob",  "runTime")
 mb = which(nameClean == "michael brown")
 birthOrder = order(cbMenSub$yob[mb])
 cbMenSub[mb[birthOrder], vars]
+# year      homeClean     nameClean  yob   runTime
+# 2000.2526 2000      tucson az michael brown 1939  96.88333
+# 2010.4241 2010  north east md michael brown 1953  92.26667
+# 2011.3026 2011  north east md michael brown 1953  85.95000
+# 2012.3800 2012  north east md michael brown 1953  88.43333
+# 2009.5246 2009      oakton va michael brown 1957  99.73333
+# 2008.3896 2008     ashburn va michael brown 1958  93.73333
+# 2009.3509 2009     ashburn va michael brown 1958  88.56667
+# 2010.5309 2010     ashburn va michael brown 1958  99.75000
+# 2012.4078 2012      reston va michael brown 1958  89.95000
+# 2006.2631 2006    chevy chase michael brown 1966  84.56667
+# 2010.1907 2010 chevy chase md michael brown 1966  79.35000
+# 2012.5089 2012 chevy chase md michael brown 1966  95.81667
+# 2004.998  2004  berryville va michael brown 1978  76.31667
+# 2008.2501 2008   arlington va michael brown 1984  84.68333
+# 2010.6307 2010    new york ny michael brown 1984 110.88333
+# 2011.2274 2011   arlington va michael brown 1984  81.70000
+# 2012.881  2012   arlington va michael brown 1984  70.93333
+# 2012.3084 2012     clifton va michael brown 1988  84.88333
 
+# Attempt to create a unique identifer for each runner
 cbMenSub$ID = paste(nameClean, cbMenSub$yob, sep = "_")
+head(cbMenSub$ID,3) #"worku bikila_1971" "lazarus nyakeraka_1975" "james kariuki_1972"
 
+# Determine how many times an 'ID' appears in data-frame (We are ignoring the hometown info for now)
 races = tapply(cbMenSub$year, cbMenSub$ID, length)
 
+# creating a vector with ID that have appeared in at least 8 races
 races8 = names(races)[which(races >= 8)]
+length(races8) # 480
+# Creating a subset of mens dataframe to include on those ID that appeared more than 8 times
+men8 = cbMenSub[ cbMenSub$ID %in% races8, ] #4575 obs x 10 vars
 
-men8 = cbMenSub[ cbMenSub$ID %in% races8, ]
-
+# Reorder dataframe by ID then by Year
 orderByRunner = order(men8$ID, men8$year)
 men8 = men8[orderByRunner, ]
+# year sex                           name                  home age   runTime             nameClean  yob
+# 1999.1644 1999   M         Aaron Glahe              Arlington VA         25  84.73333           aaron glahe 1974
+# 2001.752  2001   M         Aaron GLAHE              Arlington VA         27  74.21667           aaron glahe 1974
+# 2002.1188 2002   M         Aaron GLAHE              Arlington VA         28  79.70000           aaron glahe 1974
+# 2003.2307 2003   M  Aaron Glahe                     Reston VA            29  88.90000           aaron glahe 1974
+# 2004.1151 2004   M Aaron Glahe                     Reston VA             30  77.86667           aaron glahe 1974
+# 2005.2247 2005   M        Aaron Glahe               Reston VA            31  90.68333           aaron glahe 1974
+# 2006.3273 2006   M         Aaron Glahe                  Reston           32  91.71667           aaron glahe 1974
+# 2008.4557 2008   M        Aaron Glahe               Reston VA            34  98.76667           aaron glahe 1974
+# 1999.2640 1999   M         Abiy Zewde               Gaithersburg MD      32  96.51667            abiy zewde 1967
+# 2000.2616 2000   M         Abiy Zewde               Montgomery Vill MD   33  96.63333            abiy zewde 1967
+# 2001.2276 2001   M         Abiy ZEWDE               Montgomery Vill MD   34  89.10000            abiy zewde 1967
+# 2002.3684 2002   M         Abiy ZEWDE               Montgomery Vill MD   35 123.00000            abiy zewde 1967
+length(unique(men8$ID)) #480
 
+# Alternative approach for data organization. We will store the data as a list with an element
+# for each ID in races8 and each list element will contain a dataframe for the results associated
+# with that ID
 men8L = split(men8, men8$ID)
 names(men8L) = races8
+men8L[1]
+# $`aaron glahe_1974`
+# year sex                           name                 home          age  runTime   nameClean  yob    homeClean               ID
+# 1999.1644 1999   M         Aaron Glahe             Arlington VA         25 84.73333 aaron glahe 1974 arlington va aaron glahe_1974
+# 2001.752  2001   M         Aaron GLAHE             Arlington VA         27 74.21667 aaron glahe 1974 arlington va aaron glahe_1974
+# 2002.1188 2002   M         Aaron GLAHE             Arlington VA         28 79.70000 aaron glahe 1974 arlington va aaron glahe_1974
+# 2003.2307 2003   M  Aaron Glahe                    Reston VA            29 88.90000 aaron glahe 1974    reston va aaron glahe_1974
+# 2004.1151 2004   M Aaron Glahe                    Reston VA             30 77.86667 aaron glahe 1974    reston va aaron glahe_1974
+# 2005.2247 2005   M        Aaron Glahe              Reston VA            31 90.68333 aaron glahe 1974    reston va aaron glahe_1974
+# 2006.3273 2006   M         Aaron Glahe                 Reston           32 91.71667 aaron glahe 1974       reston aaron glahe_1974
+# 2008.4557 2008   M        Aaron Glahe              Reston VA            34 98.76667 aaron glahe 1974    reston va aaron glahe_1974
+length(men8L) #480
 
-length(unique(men8$ID))
-
+# to attempt to weed out some of the IDs that have different individuals within
+# them, we look to performance variation yr-to-yr that vary too much
+# We arbitrarily chose a differnece of 20 minutes
+# Creating a logical (T/F) variable to record gaptimes greater than 20
 gapTime = tapply(men8$runTime, men8$ID,
                  function(t) any(abs(diff(t)) > 20))
-
+# opptional approach
 gapTime = sapply(men8L, function(df) 
   any(abs(diff(df$runTime)) > 20))
 
-sum(gapTime)
+# Counting the number of gapTImes that are true
+sum(gapTime) #49 (suspect pairings)
 
 lapply(men8L[ gapTime ][1:2], function(df) df[, vars])
+# $`abiy zewde_1967`
+# year            homeClean  nameClean  yob   runTime
+# 1999.2640 1999      gaithersburg md abiy zewde 1967  96.51667
+# 2000.2616 2000   montgomery vill md abiy zewde 1967  96.63333
+# 2001.2276 2001   montgomery vill md abiy zewde 1967  89.10000
+# 2002.3684 2002   montgomery vill md abiy zewde 1967 123.00000
+# 2003.3301 2003      gaithersburg md abiy zewde 1967  97.68333
+# 2004.3579 2004   montgomery vill md abiy zewde 1967 100.36667
+# 2006.4839 2006         gaithersburg abiy zewde 1967 108.40000
+# 2008.4562 2008   montgomery vill md abiy zewde 1967  98.78333
+# 2009.5072 2009 montgomery villag md abiy zewde 1967  98.50000
+# 2010.5330 2010 montgomery villag md abiy zewde 1967  99.91667
+# 2011.6493 2011 montgomery villag md abiy zewde 1967 113.10000
+# 2012.3085 2012 montgomery villag md abiy zewde 1967  84.88333
+# 
+# $`adam hughes_1978`
+# year     homeClean   nameClean  yob   runTime
+# 2005.1916 2005 washington dc adam hughes 1978  80.38333
+# 2006.2279 2006    washington adam hughes 1978  85.16667
+# 2007.1367 2007 washington dc adam hughes 1978  77.78333
+# 2008.1028 2008 washington dc adam hughes 1978  74.23333
+# 2009.5980 2009 washington dc adam hughes 1978 108.06667
+# 2010.5641 2010 washington dc adam hughes 1978 103.06667
+# 2011.1484 2011 washington dc adam hughes 1978  77.11667
+# 2012.1836 2012 washington dc adam hughes 1978  77.76667
 
+
+# We will further clean up the home variable by extracting the state name and
+# create a new variable for the state ID
+# Create a variable for the length of each home variable
 homeLen = nchar(cbMenSub$homeClean)
-
+# Create a state variable, using the last 2 characters of the home variable
 cbMenSub$state = substr(cbMenSub$homeClean, 
                         start = homeLen - 1, stop = homeLen)
 
+# Since we know that 2006 does not list states, we will convert them to NA
 cbMenSub$state[cbMenSub$year == 2006] = NA
 
+# Modifying the runner's unique ID, adding the State ID to it.
 cbMenSub$ID = paste(cbMenSub$nameClean, cbMenSub$yob, 
                     cbMenSub$state, sep = "_")
 
+# Reselect the ID's that appear at least 8 times (like before)
 numRaces = tapply(cbMenSub$year, cbMenSub$ID, length)
-races8 = names(numRaces)[which(numRaces >= 8)]
+races8 = names(numRaces)[which(numRaces >= 8)] 
+length(races8) #306 IDs
 men8 = cbMenSub[ cbMenSub$ID %in% races8, ]
 orderByRunner = order(men8$ID, men8$year)
 men8 = men8[orderByRunner, ]
 
+
+#Alternative
 men8L = split(men8, men8$ID)
 names(men8L) = races8
 
-length(races8)
+# We now have 306 runners that have the same name, yob, and state that have completed 8 races
 
+
+
+#################################################################
+##### 2.6 Change in Running time for individuals over time
+####  Exploration of data
+################################################################
+
+# We will begin by taking the 306 runners and splitting them
+# into 9 groups, so we can display them better
 groups = 1 + (1:length(men8L) %% 9)
-
+# Create a function to add the runners to the groups,
+# create a color index and line type, within group,
+# for each runner
 addRunners = function(listRunners, colors, numLty) 
 {
   numRunners = length(listRunners)
@@ -1326,9 +1531,22 @@ addRunners = function(listRunners, colors, numLty)
           col = colors[colIndx[i]], lwd = 2, lty = ltys[i])
   }, listRunners, i = 1:numRunners) 
 }
+#---
 
+# The Fig 2.17 graph shows that the finish times for 2012, for runners less than 50 yrs old were slower
+# than those of 1999.  Does this mean that more amature runners are participating in the race vs the
+# first few years?
+
+
+#------- Figure 2.17 - Run Times for Multiple Races ----
+# Fig 2.17 graph shows the run times for individuals who participated
+# in at least 8 races.  306 individuals are spread across 9 separate 
+# plots, with different colors and linetypes
+
+# Colors used for color Index
 colors = c("#e41a1c", "#377eb8","#4daf4a", "#984ea3", 
            "#ff7f00", "#a65628")
+pdf("./Figures/Fig_2.17_RunTimesMultipleRaces.pdf", width = 10, height = 6)
 par(mfrow = c(3, 3), mar = c(2, 2, 1, 1))
 invisible(
   sapply(1:9, function(grpId){
@@ -1338,12 +1556,21 @@ invisible(
     
     addRunners(men8L[ groups == grpId ], colors, numLty = 6)
   }) )
+par(oldPar)
+dev.off()
+#-------
 
+#---------- fitOne () Crates lm() for Runners --------
+# We want to go ahead and fit a linear regression model to each of the
+# runners in a particular group
+# We create a function (fitOne) to fit a lm model for each runner, store an 
+# index value, and coefficients (agecoeff, median Age, Predicted run time)
+# 
 fitOne = function(oneRunner, addLine = FALSE, col = "grey") {
   lmOne = lm(runTime ~ age, data = oneRunner)
   if (addLine) 
     lines(x = oneRunner$age, y = predict(lmOne), 
-          col = col, lwd = 2, lty = 2)
+          col = col, lwd = 2, lty = 1)
   
   ind = floor( (nrow(oneRunner) + 1) / 2)
   res = c(coefficients(lmOne)[2], oneRunner$age[ind],
@@ -1351,35 +1578,95 @@ fitOne = function(oneRunner, addLine = FALSE, col = "grey") {
   names(res) = c("ageCoeff", "medAge", "predRunTime")
   return(res)
 }
+#----
 
+#------- Figure 2.18 - Linear Run Times fit for Individual Runners ----
+# Fig 2.18 graph shows the run times for individuals who participated
+# in at least 8 races and are part of Group 9.  Figure also display
+# predicted linear fit model for each runner (black dashed)
+pdf("./Figures/Fig_2.18_RunTimesMultipleRacesLinearFit.pdf", width = 10, height = 6)
 par(mfrow = c(1, 1), mar = c(5, 4, 1, 1))
-
+# For this plot, we will display results for group 9 only
 plot( x = 0, y = 0, type = "n",
       xlim = c(20, 80), ylim = c(50, 130),
       xlab = "Age (years)", ylab = "Run Time (minutes)")
 
 addRunners(men8L[ groups == 9 ], colors, numLty = 6)
 lapply(men8L[groups == 9], fitOne, addLine = TRUE, col = "black")
+par(oldPar)
+dev.off()
+#-----
 
+# We now go ahead and fit a lm() to all 306 runners who have run more than 8 races
+# store the coefficients, median age, and predicted run time for median age
 men8LongFit = lapply(men8L, fitOne)
+head(men8LongFit,4)
+# $`abiy zewde_1967_md`
+# ageCoeff      medAge    predRunTime 
+# -0.08965587 37.00000000 99.98437922 
+# 
+# $`adam knapp_1977_va`
+# ageCoeff      medAge    predRunTime 
+# -0.2706019  31.0000000 104.5979167 
+# 
+# $`adam stolzberg_1976_va`
+# ageCoeff      medAge    predRunTime 
+# -0.8427656  29.0000000  67.6580433 
+# 
+# $`al navidi_1960_md`
+# ageCoeff      medAge    predRunTime 
+# 0.09554381 45.00000000 76.13213746 
 
-coeffs = sapply(men8LongFit, "[", "ageCoeff" )
-ages = sapply(men8LongFit, "[", "medAge")
+coeffs = sapply(men8LongFit, "[", "ageCoeff" ) #extracted named coefficients for each of the runners
+head(coeffs,3)
+# abiy zewde_1967_md.ageCoeff     adam knapp_1977_va.ageCoeff adam stolzberg_1976_va.ageCoeff 
+# -0.08965587                     -0.27060185                     -0.84276557
 
+ages = sapply(men8LongFit, "[", "medAge") #extracted named median ages for each of the runners
+head(ages,3)
+# abiy zewde_1967_md.medAge     adam knapp_1977_va.medAge adam stolzberg_1976_va.medAge 
+# 37                            31                            29 
+
+
+# Create a linear model for all of the 306 runners
 longCoeffs = lm(coeffs ~ ages)
 
 summary(longCoeffs)
+# Summary Statistics
+# Call:
+#   lm(formula = coeffs ~ ages)
+# 
+# Residuals:
+#   Min      1Q  Median      3Q     Max 
+# -4.4026 -0.6375 -0.0246  0.5645  3.3541 
+# 
+# Coefficients:
+#   Estimate Std. Error t value Pr(>|t|)    
+# (Intercept) -1.958440   0.305487  -6.411 5.51e-10 ***
+#   ages         0.055263   0.006175   8.949  < 2e-16 ***
+#   ---
+#   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+# 
+# Residual standard error: 1.01 on 304 degrees of freedom
+# Multiple R-squared:  0.2085,	Adjusted R-squared:  0.2059 
+# F-statistic: 80.09 on 1 and 304 DF,  p-value: < 2.2e-16
 
-pdf("CB_LongCoeffs.pdf", width = 10, height = 7)
+#------- Figure 2.19 - Coeffients of Longitudinal Analysis of Atheletes ----
+# Fig 2.19 graph shows how the coefficients of the individual runners
+# varies with age (neg values meas they are incresing with age, + values
+# mean they are slowing down).
+# Fitted both a lm() and Loess() model to the data and displayed both
+pdf("./Figures/Fig_2.19_CB_LongCoeffs.pdf", width = 10, height = 7)
 oldPar = par(mar = c(4.1, 4.1, 1, 1))
-plot(coeffs ~ ages, xlab = "Median Age (years)",
+plot(coeffs ~ ages, cex=.8, pch=20,xlab = "Median Age (years)",
      ylab = "Coefficient (minutes per race / year)")
 abline(longCoeffs, col = "#984ea3", lwd = 3)
 abline(h = 0, col="blue", lwd = 3)
-loCoeffs = loess(coeffs ~ ages)
+loCoeffs = loess(coeffs ~ ages) #Fitting loess line
 ageV = min(ages):max(ages)
 predV = predict(loCoeffs, new = data.frame(ages = ageV))
 lines(x = ageV, y = predV, lwd = 3, lty = 2, col = "#4daf4a")
 par(oldPar)
 dev.off()
+#----
 
