@@ -1,62 +1,134 @@
-spamPath = system.file(package = "RSpamData")
-#spamPath = "/Users/nolan/RPackages/RSpamData"spamPath = "."
-list.dirs(spamPath, full.names = FALSE)
+#  MSDS 7333 - Quantifying the World - Case Study #6
+#  Spam Detection - Using Statistic Analysis
+#  Team Members:
+#           Jeffery Lancon, Manisha Pednekar, Andrew Walch, David Stroud
+#  Date: 02/19/2019
+#  Case Study from: Data Science in R: Nolan,Temple,Lang (Ch 3)
+#  Initial source code: http://rdatasciencecases.org/code.html
 
+
+# Setting the current working directory to the current file location
+library(rstudioapi)
+current_path <- getActiveDocumentContext()$path
+setwd(dirname(current_path ))
+
+
+################### Set-up and Exploration of Data ##################
+#####################################################################
+
+# To programmatically located the  emails, the files
+# are stored in a subdirectory /SpamAssassinMessages/Messages/.....
+# There are 5 directories easy_ham,easy_ham_2,hard_ham,spam, and spam_2
+
+spamPath = "./SpamAssassinMessages/"
+
+list.dirs(spamPath, full.names = FALSE)
+# [1] ""                    "Messages"            "Messages/easy_ham"   "Messages/easy_ham_2" "Messages/hard_ham"  
+# [6] "Messages/spam"       "Messages/spam_2"
+
+# Listing folders in Message directory
 list.files(path = paste(spamPath, "messages", 
                         sep = .Platform$file.sep))
+# [1] "easy_ham"   "easy_ham_2" "hard_ham"   "spam"       "spam_2" 
 
+# examime the first file names in spam_2 foloder
 head(list.files(path = paste(spamPath, "messages", "spam_2",
                              sep = .Platform$file.sep)))
+# [1] "00001.317e78fa8ee2f54cd4890fdc09ba8176" "00002.9438920e9a55591b18e60d1ed37d992b"
+# [3] "00003.590eff932f8704d8b0fcbe69d023b54d" "00004.bdcc075fa4beb5157b5dd6cd41d8887b"
+# [5] "00005.ed0aba4d386c5e62bc737cf3f0ed9589" "00006.3ca1f399ccda5d897fecb8c57669a283"
 
 dirNames = list.files(path = paste(spamPath, "messages", 
                                    sep = .Platform$file.sep))
+
+# Check to see how many files located in the Messages directories
 length(list.files(paste(spamPath, "messages", dirNames, 
                         sep = .Platform$file.sep)))
+# [1] 9354
 
+# Getting a count of files in each of Messages subdirectories
 sapply(paste(spamPath, "messages", dirNames, 
              sep = .Platform$file.sep), 
        function(dir) length(list.files(dir)) )
+# ./SpamAssassinMessages//messages/easy_ham ./SpamAssassinMessages//messages/easy_ham_2 
+# 5052                                        1401 
+# ./SpamAssassinMessages//messages/hard_ham       ./SpamAssassinMessages//messages/spam 
+# 501                                        1002 
+# ./SpamAssassinMessages//messages/spam_2 
+# 1398 
 
+# Creating a list of directory names/paths for use in retrieving data
 fullDirNames = paste(spamPath, "messages", dirNames, 
                      sep = .Platform$file.sep)
+      # ------ Test Code -----
+      # List first message/file from messages/easy_ham
+      fileNames = list.files(fullDirNames[1], full.names = TRUE)
+      fileNames[1] #[1] "./SpamAssassinMessages//messages/easy_ham/00001.7c53336b37003a9286aba55d2945844c"
+      # Read and display the first few lines of the first message in easy_ham
+      msg = readLines(fileNames[1])
+      head(msg)
+      # [1] "From exmh-workers-admin@redhat.com  Thu Aug 22 12:36:23 2002"     
+      # [2] "Return-Path: <exmh-workers-admin@spamassassin.taint.org>"         
+      # [3] "Delivered-To: zzzz@localhost.netnoteinc.com"                      
+      # [4] "Received: from localhost (localhost [127.0.0.1])"                 
+      # [5] "\tby phobos.labs.netnoteinc.com (Postfix) with ESMTP id D03E543C36"
+      # [6] "\tfor <zzzz@localhost>; Thu, 22 Aug 2002 07:36:16 -0400 (EDT)"
 
-fileNames = list.files(fullDirNames[1], full.names = TRUE)
-fileNames[1]
+      # Selecting 15 files from easy_ham directory to read
+      indx = c(1:5, 15, 27, 68, 69, 329, 404, 427, 516, 852, 971)
+      fn = list.files(fullDirNames[1], full.names = TRUE)[indx]
+      sampleEmail = sapply(fn, readLines) # Creates a list of 15 character vectors       
 
-msg = readLines(fileNames[1])
-head(msg)
+      # Subsetting out first message in easy_ham directory for analysis
+      msg = sampleEmail[[1]]
+      which(msg == "")[1] # Identifying first blank line in message (This is to find the first blank line,
+                          # by using the [1], in the message, which indicates the separation between header
+                          # and body of email) Without index [1], would return a index of all blank lines
+      #[1] 63
 
-indx = c(1:5, 15, 27, 68, 69, 329, 404, 427, 516, 852, 971)
-fn = list.files(fullDirNames[1], full.names = TRUE)[indx]
-sampleEmail = sapply(fn, readLines)        
+      match("", msg) # Another way to identifying the first blank line in message/vector)
 
-msg = sampleEmail[[1]]
-which(msg == "")[1]
+      # going to create a splitpoint, using the first blank line as the argument
+      splitPoint = match("", msg)
+      
+      #Splitting message into header/body, using splitPoint index as the argument
+      # Creating msg using the last 2 lines of header and first 6 lines of body
+      msg[ (splitPoint - 2):(splitPoint + 6) ]
+          # [1] "List-Archive: <https://listman.spamassassin.taint.org/mailman/private/exmh-workers/>"
+          # [2] "Date: Thu, 22 Aug 2002 18:26:25 +0700"                                               
+          # [3] ""                                                                                    
+          # [4] "    Date:        Wed, 21 Aug 2002 10:54:46 -0500"                                    
+          # [5] "    From:        Chris Garrigues <cwg-dated-1030377287.06fa6d@DeepEddy.Com>"         
+          # [6] "    Message-ID:  <1029945287.4797.TMDA@deepeddy.vircio.com>"                         
+          # [7] ""                                                                                    
+          # [8] ""                                                                                    
+          # [9] "  | I can't reproduce this error."
 
-match("", msg)
+    header = msg[1:(splitPoint-1)] # Creating Header of message: everything above splitPoint
+    body = msg[ -(1:splitPoint) ] # Creating Body of message: everything below SplitPoint
 
-splitPoint = match("", msg)
-
-msg[ (splitPoint - 2):(splitPoint + 6) ]
-
-header = msg[1:(splitPoint-1)]
-body = msg[ -(1:splitPoint) ]
-
+#----------- splitMessage function () - Rev A ----------
+# Split message into header and body, using 1st blank line
+# as the split Point
 splitMessage = function(msg) {
   splitPoint = match("", msg)
   header = msg[1:(splitPoint-1)]
   body = msg[ -(1:splitPoint) ]
   return(list(header = header, body = body))
 }
+#---
+    
+      sampleSplit = lapply(sampleEmail, splitMessage) #Testing code on list of 15 previously select messages
+      head(sampleSplit[[1]]$header)
+      head(sampleSplit[[2]]$body)
 
-sampleSplit = lapply(sampleEmail, splitMessage)
-
-header = sampleSplit[[1]]$header
-grep("Content-Type", header)
-
-grep("multi", tolower(header[46]))
-
-header[46]
+      header = sampleSplit[[1]]$header
+      grep("Content-Type", header) #identifying index for line containing 'Content-Type' of message #1
+      # [1] 46
+      grep("multi", tolower(header[46])) #determing if message has attachments (noted by Content-Type Key value equaling 'multi')
+      # integer(0) - 'multi' not found in line 46; therefore, no attachments
+      header[46]
+      # [1] "Content-Type: text/plain; charset=us-ascii"
 
 headerList = lapply(sampleSplit, function(msg) msg$header)
 CTloc = sapply(headerList, grep, pattern = "Content-Type")
