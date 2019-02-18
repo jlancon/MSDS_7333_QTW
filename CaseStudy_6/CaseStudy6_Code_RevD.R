@@ -779,6 +779,7 @@ boxplot(testLLR ~ spamLab, cex = .4, pch=19, col = 'lightblue',
         ylab = "Log Likelihood Ratio",
         main = "Log Likelihood Ratio for Spam and Ham\n 3116 Test Messages",
         ylim=c(-500, 500))
+
 dev.off()
 #-----
 
@@ -1992,6 +1993,7 @@ percent = emailDF$perCaps
 isSpamLabs = factor(emailDF$isSpam, labels = c("ham", "spam"))
 boxplot(log(1 + percent) ~ isSpamLabs,
         ylab = "Percent Capitals (log)",cex=.4,pch=3,
+        col = 'lightblue',
         main = "Box-Plot % Capitalization - Message Body")
 
 dev.off()
@@ -2005,6 +2007,7 @@ pdf("./Figures/Fig3.5B_SPAM_Q-QplotPercentCaps.pdf", width = 5, height = 5)
 qqplot(logPerCapsSpam, logPerCapsHam, 
        xlab = "Regular Email", ylab = "Spam Email", 
        main = "Percentage of Capital Letters (log scale)",
+       col = 'lightblue',
        pch = 19, cex = 0.3)
 dev.off()
 #-------
@@ -2400,6 +2403,15 @@ model_rpart
     # The final value used for the model was cp = 0.001.
 
 
+#------- Figure 3.Special - Variable Importance Factor for Random Forest
+pdf("./Figures/Fig3.Special_VariableImportance_RandomForest.pdf", width = 8, height = 7)
+rf1 <- randomForest(as.factor(isSpam) ~ .,cp=0.001,data=emailDFnum)
+rf1$importance
+varImpPlot(rf1,main="Important variables for Spam Classification")
+dev.off()
+#-----
+
+
 library(xgboost)
 xgb_grid<-expand.grid(nrounds = 100, max_depth = c(3,5,7,9,11), eta = c(0.01,0.03,0.1), gamma=c(1,3,5,10), colsample_bytree=1, min_child_weight=1, subsample=1)
 train_control<-trainControl(method="cv", number=3, savePredictions = 'final',summaryFunction = f1)
@@ -2486,5 +2498,27 @@ model_xgb
     # F1 was used to select the optimal model using the largest value.
     # The final values used for the model were nrounds = 100, max_depth = 11, eta =
     #   0.1, gamma = 1, colsample_bytree = 1, min_child_weight = 1 and subsample = 1.
+
+
+
+#------- Figure 3.Special2 - Variable Importance Factor for Random Forest
+pdf("./Figures/Fig3.Special2_VariableImportance_XGBoost.pdf", width = 7, height = 7)
+# Used optimal results from XGBoost matrix for analysis model 
+bst <- xgboost(data = as.matrix(emailDFnum[ , names(emailDFnum) != "isSpam"]), label = emailDFnum$isSpam, 
+               nrounds = 100, max_depth = 11, eta =0.1, gamma = 1, colsample_bytree = 1, 
+               min_child_weight = 1, subsample = 1, objective = "binary:logistic")
+#bstimportance = xgb.importance(model = bst)
+
+importance_matrix <- xgb.importance(colnames(emailDFnum[ , names(emailDFnum) != "isSpam"]), model = bst)
+
+xgb.plot.importance(importance_matrix, rel_to_first = TRUE,
+                    xlab = "Relative importance",
+                    main = 'Important variables for Spam Classification\nXGBoost',
+                    col = 'blue')
+dev.off()
+#-----
+
+gg <- xgb.ggplot.importance(importance_matrix, measure = "Frequency", rel_to_first = TRUE)
+gg + ggplot2::ylab("Frequency")
 
 #----- End of code ----
