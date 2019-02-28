@@ -1,0 +1,106 @@
+# Text version of Python Baby Names Analysis
+# Just in case you can’t get the .py version to work
+
+# The baby names data set from the SSA website must be downloaded 
+# and unzipped for this code to work.
+
+# Change working directory to the directory where the files exist
+import os
+os.chdir('./Dropbox/Classes/Lecture 28')
+
+# Import pandas and numpy
+import pandas as pd
+import numpy as np
+
+# Read the names from 1880
+names1880 = pd.read_csv('names/yob1880.txt',names=['name','sex','births'])
+
+# Now import all files and concatenate into one file
+years = range(1880, 2011)
+pieces = [] # initializing a list
+columns = ['name','sex','births']
+
+# Here we go!
+for year in years:
+    path = 'names/yob%d.txt' %year
+    frame = pd.read_csv(path, names=columns)
+    frame['year'] = year
+    pieces.append(frame)
+
+names = pd.concat(pieces, ignore_index=True)
+
+# Dimensions of the data frame 'names'    
+names.shape # It’s huge!
+
+# Get total births by sex
+total_births = names.pivot_table('births', index='year', columns='sex', aggfunc=sum)
+
+# See tail of the data
+total_births.tail()
+
+# Plot the total births by sex for 1880 to 2010
+total_births.plot(title='Total births by sex and year')
+
+# Define a function to insert a column called 'prop'
+# 'prop' is the fraction of babies given each name relative to
+# the total number of births. Group the data by year and sex, 
+# then add a new column to each group.
+
+def add_prop(group):
+    #Integer division floors
+    births = group.births.astype(float)
+    group['prop'] = births / births.sum()
+    return group
+
+# Run the function
+names = names.groupby(['year', 'sex']).apply(add_prop)
+
+# Sanity Check
+names.shape #Make sure prop variable has been added
+list(names.columns.values)
+names.head()
+
+# Check that group sums a close to 1
+np.allclose(names.groupby(['year','sex']).prop.sum(),1)
+
+# Extract the top 1000 names for each sex/year combination
+def get_top1000(group):
+    return group.sort_values(by='births', ascending=False)[:1000]
+
+grouped = names.groupby(['year','sex'])
+top1000 = grouped.apply(get_top1000)
+top1000.shape #Considerably smaller
+
+# Analyzing naming trends for each sex
+boys = top1000[top1000.sex == 'M']
+girls = top1000[top1000.sex == 'F']
+total_births = top1000.pivot_table('births', index='year', columns='name', aggfunc=sum)
+subset = total_births[['John','Harry','Mary','Marilyn']]
+subset.plot(subplots=True, figsize=(12,10), grid=False, title = 'Number of births per year')
+
+# Analyzing name diversity
+table = top1000.pivot_table('prop', index='year', columns='sex', aggfunc=sum)
+table.plot(title='Sum of Top 1000 Proportions by year and sex', yticks=np.linspace(0, 1.2,13), xticks=range(1880,2020,10))
+
+# Consider number of distinct names for boys in 2010
+df = boys[boys.year == 2010]
+prop_cumsum = df.sort_values(by='prop', ascending=False).prop.cumsum()
+prop_cumsum[:10]
+prop_cumsum.searchsorted(0.5)
+
+# Compare to 1900
+df = boys[boys.year == 1900]
+in1900 = df.sort_values(by='prop', ascending=False).prop.cumsum()
+in1900.searchsorted(0.5) + 1
+
+# Calculate diversity of each name by sex
+def get_quantile_count(group, q=0.5):
+    group = group.sort_values(by='prop', ascending=False)
+    return group.prop.cumsum().searchsorted(q) + 1
+
+diversity = top1000.groupby(['year', 'sex']).apply(get_quantile_count)
+diversity = diversity.unstack('sex')
+diversity.head()
+diversity = diversity.astype(float)
+diversity.head()
+diversity.plot(title="Number of popular names in top 50%")
