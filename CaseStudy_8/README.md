@@ -27,5 +27,9 @@ Datasets:
 
 
 Abstract
- 
+In this case study, we are looking at stocks across different industries, 
+using Signal Frontier Analysis and Sharps Ratios for determining the best strategy,
+i.e. Holding period vs momentum, for three (3) stock portfolios: Financial, Technology,
+and Balanced. This study is an extension of work previously conducted by the authors of Python
+for Data Analysis, Data Wrangling with Pandas, NumPy, and IPython, McKinney [1]. 
 
