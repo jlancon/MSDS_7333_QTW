@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-Spyder Editor
+#  MSDS 7333 - Quantifying the World - Case Study #10
+#  Imputation
+#  Team Members:
+#           Jeffery Lancon, Manisha Pednekar, Andrew Walch, David Stroud
+#  Date: 03/19/2019
 
-This is a temporary script file.
-"""
 import os
 import numpy as np
 import pandas as pd
@@ -297,13 +298,18 @@ for j in range(len(per_numP3)):
     results_bostonP3[j] = np.array(get_resultsP3(Prob3,target,per_numP3[j],ran_seed,cond_var,cond_var_val,imp_var,strategy,fill_value))
 
 results_bostonP3 = results_bostonP3.T
-results_bostonP3.columns=['PercentImputed','RSquared','AdjRSquared','BIC','MSE']
+results_bostonP3.columns=['Imputed_Percent','RSquared','AdjRSquared','BIC','MSE']
 
 print(results_bostonP3) # Prints results of analysis for each percent of Imputed variables
 
-results_bostonP3.RSquared.plot()
+results_bostonP3.plot('Imputed_Percent','RSquared')
+plt.ylabel('RSquared Value')
+plt.title('RSquared Value vs Imputed Percentage')
 
-results_bostonP3.MSE.plot()
+# Plot of MSE values analysis results vs different Percentage of Imputation
+results_bostonP3.plot('Imputed_Percent','MSE')
+plt.ylabel('Mean Square Error')
+plt.title('Mean Square Error vs Imputed Percentage')
 
 
 
