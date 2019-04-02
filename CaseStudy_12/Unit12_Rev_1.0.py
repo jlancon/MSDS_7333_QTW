@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Mar 30 14:50:17 2019
-
-@author: Prodigy
+#  MSDS 7333 - Quantifying the World - Case Study #12
+#  Neural Networks
+#  Team Members:
+#           Jeffery Lancon, Manisha Pednekar, David Stroud
+#  Date: 04/02/2019
 """
 import os
 import tensorflow as tf
