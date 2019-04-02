@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 N=2000000 #Chosen as a decent compromise between sample size and limitations of hardware
 input_data=pd.read_csv("C:/Users/Prodigy/Documents/Personal Info/SMU/MSDS 7333 - Quantifying the World/Unit_12/HIGGS.csv",nrows=10500000,header=None)
 
+cc = input_data.iloc[:,1:]
+
 # Creating a random sample of observations from the 10.5M observations
 np.random.seed(42)
 data = input_data.sample(n=N)
@@ -21,21 +23,30 @@ data = input_data.sample(n=N)
 # Selecting the 500K test data set (last 500K rows in the data set)
 test_data=pd.read_csv("C:/Users/Prodigy/Documents/Personal Info/SMU/MSDS 7333 - Quantifying the World/Unit_12//HIGGS.csv",nrows=500000,header=None,skiprows=10500000)
 
-
+##############################
+##----  Correlation Matrix
 #The first column is the class label (1 for signal, 0 for background), followed 
 #by the 28 features (21 low-level features then 7 high-level features): 
-data.columns = ['class_label','lepton pT','lepton eta','lepton phi','missing energy magnitude',
+cc.columns = ['lepton pT','lepton eta','lepton phi','missing energy magnitude',
                 'missing energy phi','jet 1 pt','jet 1 eta','jet 1 phi',
                 'jet 1 b-tag','jet 2 pt','jet 2 eta','jet 2 phi','jet 2 b-tag',
                 'jet 3 pt','jet 3 eta','jet 3 phi','jet 3 b-tag','jet 4 pt',
                 'jet 4 eta','jet 4 phi','jet 4 b-tag','m_jj','m_jjj','m_lv',
                 'm_jlv','m_bb','m_wbb','m_wwbb']
-test_data.columns = ['class_label','lepton pT','lepton eta','lepton phi','missing energy magnitude',
-                'missing energy phi','jet 1 pt','jet 1 eta','jet 1 phi',
-                'jet 1 b-tag','jet 2 pt','jet 2 eta','jet 2 phi','jet 2 b-tag',
-                'jet 3 pt','jet 3 eta','jet 3 phi','jet 3 b-tag','jet 4 pt',
-                'jet 4 eta','jet 4 phi','jet 4 b-tag','m_jj','m_jjj','m_lv',
-                'm_jlv','m_bb','m_wbb','m_wwbb']
+
+corr = cc.corr()
+# Set up the matplotlib figure
+f, ax = plt.subplots(figsize=(11, 9))
+
+# Generate a custom diverging colormap
+cmap = sns.diverging_palette(220, 10, as_cmap=True)
+
+# Draw the heatmap with the mask and correct aspect ratio
+sns.heatmap(corr, cmap=cmap, vmax=.3, center=0,
+            square=True, linewidths=.5, cbar_kws={"shrink": .5})
+
+###########################################
+
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
@@ -49,23 +60,6 @@ x_train = np.array(data.loc[:,1:])
 x_test = np.array(test_data.loc[:,1:])
 y_test = np.array(test_data.loc[:,0])
 
-# =============================================================================
-# class CustomModelCheckPoint(tf.keras.callbacks.Callback):
-#     def __init__(self,**kargs):
-#         super(CustomModelCheckPoint,self).__init__(**kargs)
-#         self.epoch_accuracy = {} # loss at given epoch
-#         self.epoch_loss = {} # accuracy at given epoch
-#         def on_epoch_begin(self,epoch, logs={}):
-#             # Things done on beginning of epoch. 
-#             return
-# 
-#         def on_epoch_end(self, epoch, logs={}):
-#             # things done on end of the epoch
-#             self.epoch_accuracy[epoch] = logs.get("acc")
-#             self.epoch_loss[epoch] = logs.get("loss")
-#             self.model.save_weights("name-of-model-%d.h5" %epoch) # save the model
-# 
-# =============================================================================
 
 
 # Model #1 Hidden Layers-1
@@ -261,15 +255,6 @@ model3.save('C:/Users/Prodigy/Documents/GitRepositories/MSDS_7333_QTW/CaseStudy_
 
 
 
-##### Example - Retrieving saved model #####
-new_model = tf.keras.models.load_model('C:/Users/Prodigy/Documents/GitRepositories/MSDS_7333_QTW/CaseStudy_12/Models/my_model3_2_2_relu_25epoch.h5')
-new_model_history = new_model.history.history
-new_model.summary()
-loss, acc = new_model.evaluate(x_test, y_test)
-print("Restored model, accuracy: {:5.2f}%".format(100*acc))
-############################################
-
-
 Prob11_SigmoidDF = pd.DataFrame.from_dict(model1_sigmoid_25epoch)
 Prob12_SigmoidDF = pd.DataFrame.from_dict(model2_sigmoid_25epoch)
 Prob13_SigmoidDF = pd.DataFrame.from_dict(model3_sigmoid_25epoch)
@@ -364,10 +349,10 @@ leg = ax.legend();
 #------
 #graphics - Activation Functions - tanh - comparing Models
 fig, ax = plt.subplots()
-ax.plot(Prob2B_DF_plot.model1_tanh_25epoch_acc, '-b', label='Model 1')
-ax.plot(Prob2B_DF_plot.model2_tanh_25epoch_acc, '-g', label='Model 2')
-ax.plot(Prob2B_DF_plot.model3_tanh_25epoch_acc, '-r', label='Model 3')
-plt.title('Problem #2 Activation Function - Tanh vs Models\nAccuracy-Activation Function vs Epochs')
+ax.plot(Prob2C_DF_plot.model1_relu_25epoch_acc, '-b', label='Model 1')
+ax.plot(Prob2C_DF_plot.model2_relu_25epoch_acc, '-g', label='Model 2')
+ax.plot(Prob2C_DF_plot.model3_relu_25epoch_acc, '-r', label='Model 3')
+plt.title('Problem #2 Activation Function - Relu vs Models\nAccuracy-Activation Function vs Epochs')
 plt.xlabel('Epochs')
 plt.ylabel('Training Accuracy')
 leg = ax.legend();
@@ -648,6 +633,43 @@ roc_auc_score(y_test,model5.predict(x_test))
             #sgd Out[69]: 0.6956203140084707
                 #adadelta Out[76]: 0.8047374342268395
 
+model5.summary()
+    #_________________________________________________________________
+    #Layer (type)                 Output Shape              Param #   
+    #=================================================================
+    #dense_96 (Dense)             (None, 50)                1450      
+    #_________________________________________________________________
+    #dense_97 (Dense)             (None, 50)                2550      
+    #_________________________________________________________________
+    #dropout_72 (Dropout)         (None, 50)                0         
+    #_________________________________________________________________
+    #dense_98 (Dense)             (None, 50)                2550      
+    #_________________________________________________________________
+    #dropout_73 (Dropout)         (None, 50)                0         
+    #_________________________________________________________________
+    #dense_99 (Dense)             (None, 100)               5100      
+    #_________________________________________________________________
+    #dropout_74 (Dropout)         (None, 100)               0         
+    #_________________________________________________________________
+    #dense_100 (Dense)            (None, 100)               10100     
+    #_________________________________________________________________
+    #dropout_75 (Dropout)         (None, 100)               0         
+    #_________________________________________________________________
+    #dense_101 (Dense)            (None, 80)                8080      
+    #_________________________________________________________________
+    #dropout_76 (Dropout)         (None, 80)                0         
+    #_________________________________________________________________
+    #dense_102 (Dense)            (None, 80)                6480      
+    #_________________________________________________________________
+    #dropout_77 (Dropout)         (None, 80)                0         
+    #_________________________________________________________________
+    #dense_103 (Dense)            (None, 1)                 81        
+    #=================================================================
+    #Total params: 36,391
+    #Trainable params: 36,391
+    #Non-trainable params: 0
+    #_________________________________________________________________
+
 
 model5_4_adadelta = model5.history.history
 model5.save('C:/Users/Prodigy/Documents/GitRepositories/MSDS_7333_QTW/CaseStudy_12/Models/my_model5_4_adadelta.h5')
@@ -682,33 +704,105 @@ leg = ax.legend();
 #########################################
 
 
+# Problem #6 - Final push for a high AUC score.
+act = tf.nn.tanh
+kern = 'VarianceScaling'
+np.random.seed(42)
+# Model #3 Hidden Layers-6
+# Number of neurons;  50,50,100,100,80,80
+# Dropout % 0.20
+model6 = tf.keras.models.Sequential([
+  tf.keras.layers.Dense(50, input_shape=(28,), activation=act,kernel_initializer=kern),
+  tf.keras.layers.Dense(50, activation=act),
+  tf.keras.layers.Dropout(0.2),
+  tf.keras.layers.Dense(50, activation=act),
+  tf.keras.layers.Dropout(0.2),
+  tf.keras.layers.Dense(50, activation=act),
+  tf.keras.layers.Dropout(0.2),
+  tf.keras.layers.Dense(50, activation=act),
+  tf.keras.layers.Dropout(0.2),
+  tf.keras.layers.Dense(50, activation=act),
+  tf.keras.layers.Dropout(0.2),
+  tf.keras.layers.Dense(1, activation=act)
+])
+model6.compile(optimizer='RMSprop',
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
+
+model6.fit(x_train, y_train, epochs=100,batch_size=300)
+
+model6.evaluate(x_test, y_test)
+    #500000/500000 [==============================] - 20s 41us/sample - loss: 0.5139 - acc: 0.7469
+    #Out[176]: [0.5139309719181061, 0.746896]
+
+roc_auc_score(y_test,model6.predict(x_test))
+    #roc_auc_score(y_test,model6.predict(x_test))
+    #Out[178]: 0.8274673123171997
 
 
+model6.summary()
+    # _________________________________________________________________
+    #Layer (type)                 Output Shape              Param #   
+    #=================================================================
+    #dense_105 (Dense)            (None, 50)                1450      
+    #_________________________________________________________________
+    #dense_106 (Dense)            (None, 50)                2550      
+    #_________________________________________________________________
+    #dropout_78 (Dropout)         (None, 50)                0         
+    #_________________________________________________________________
+    #dense_107 (Dense)            (None, 50)                2550      
+    #_________________________________________________________________
+    #dropout_79 (Dropout)         (None, 50)                0         
+    #_________________________________________________________________
+    #dense_108 (Dense)            (None, 50)                2550      
+    #_________________________________________________________________
+    #dropout_80 (Dropout)         (None, 50)                0         
+    #_________________________________________________________________
+    #dense_109 (Dense)            (None, 50)                2550      
+    #_________________________________________________________________
+    #dropout_81 (Dropout)         (None, 50)                0         
+    #_________________________________________________________________
+    #dense_110 (Dense)            (None, 50)                2550      
+    #_________________________________________________________________
+    #dropout_82 (Dropout)         (None, 50)                0         
+    #_________________________________________________________________
+    #dense_111 (Dense)            (None, 1)                 51        
+    #=================================================================
+    #Total params: 14,251
+    #Trainable params: 14,251
+    #Non-trainable params: 0
+    #_________________________________________________________________
 
 
+model6_ultimate = model6.history.history
+
+model6.save('C:/Users/Prodigy/Documents/GitRepositories/MSDS_7333_QTW/CaseStudy_12/Models/my_model6_ultimate.h5')
+Prob6_ultimate = pd.DataFrame.from_dict(model6_ultimate)
+Prob6_ultimate.columns = ['loss','acc']
+Prob6_ultimate.to_csv('C:/Users/Prodigy/Documents/GitRepositories/MSDS_7333_QTW/CaseStudy_12/Prob6_DF.csv')
+
+#######################################
+# Problem #6 graphics
+
+Prob6_DF_plot=pd.read_csv("C:/Users/Prodigy/Documents/GitRepositories/MSDS_7333_QTW/CaseStudy_12/Prob6_DF.csv") 
+
+fig, ax = plt.subplots()
+ax.plot(Prob6_DF_plot.acc, '-b', label='acc')
+ax.plot(Prob6_DF_plot.loss, '-g', label='loss')
+plt.title('Problem #6 \nOptimized Model Accuracy & Loss vs Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Training Accuracy')
+leg = ax.legend();
+
+#########################################
 
 
-
-
-
-
-
-
-
-
-#checkpoint = CustomModelCheckPoint()
-model.fit(x_train, y_train, epochs=5,callbacks=[Callback])
-
-checkpoint.epoch_accuracy
-model.evaluate(x_test, y_test)
-model.summary()
-tf.keras.models.model.callbacks()
-model.fit(callbacks)
-
-
-
-
+##### Example - Retrieving saved model #####
+new_model = tf.keras.models.load_model('C:/Users/Prodigy/Documents/GitRepositories/MSDS_7333_QTW/CaseStudy_12/Models/my_model3_2_2_relu_25epoch.h5')
+new_model_history = new_model.history.history
 new_model.summary()
-#loss, acc = new_model.evaluate(x_test, y_test)
-#print("Restored model, accuracy: {:5.2f}%".format(100*acc))
+loss, acc = new_model.evaluate(x_test, y_test)
+print("Restored model, accuracy: {:5.2f}%".format(100*acc))
+############################################
+
 
